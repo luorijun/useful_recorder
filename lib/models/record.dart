@@ -1,6 +1,10 @@
 import 'package:useful_recorder/utils/datetime_extension.dart';
 
 enum Type {
+  // 持久化时使用
+  MensesStart,
+  MensesEnd,
+  // 内存中使用
   Menses,
   Ovulation,
   OvulationDay,

@@ -19,8 +19,7 @@ class RecordView extends StatelessWidget {
     final start = DateTime(1970, 1);
 
     Future.microtask(() {
-      return context.read<HomePageState>().title =
-          "${init.year} 年 ${init.month} 月";
+      return context.read<HomePageState>().title = "${init.year} 年 ${init.month} 月";
     });
 
     return ChangeNotifierProvider(
@@ -66,8 +65,7 @@ class RecordView extends StatelessWidget {
                     decoration: BoxDecoration(
                       color: background,
                       borderRadius: BorderRadius.circular(2.0),
-                      border:
-                          date.sameDay(state.selected) ? Border.all() : null,
+                      border: date.sameDay(state.selected) ? Border.all() : null,
                     ),
                     child: Text(
                       "${date.day}",
@@ -81,12 +79,10 @@ class RecordView extends StatelessWidget {
 
               return day ?? Container();
             },
-            onMonthChanged: (date) => context.read<HomePageState>().title =
-                "${date.year} 年 ${date.month} 月",
+            onMonthChanged: (date) => context.read<HomePageState>().title = "${date.year} 年 ${date.month} 月",
             onDateSelected: (date, month) {
               final record = state.records[date] ?? Record(date);
-              context.read<HomePageState>().title =
-                  "${date.year} 年 ${date.month} 月"
+              context.read<HomePageState>().title = "${date.year} 年 ${date.month} 月"
                   "，${record.type}";
               state.selected = date;
             },
@@ -166,10 +162,58 @@ class RecordView extends StatelessWidget {
   }
 }
 
+/// 日历记录页
+///
+/// 数据：
+///   - 记录表
+///
+/// 属性：
+///   - 选择日期的记录
+///
+/// 函数：
+///   - 查询当日记录：O(1) 通过记录表查询
+///
+///   TODO: 经期操作后，周期类型不用全局刷新，只需要刷新受影响的经期和它的排卵期
+///
+///   - 合并经期：O(m) 将前周期的结束日期与后周期的开始日期的周期类型都置为空
+///   - 新增经期：O(m) 将选择日期的周期类型置为开始，若第五天不为未来日期，则将其置为结束
+///   - 追加经期：O(m) 将前周期的结束日期设置为选择的日期
+///   - 提前经期：O(m) 将后周期的开始日期设置为选择的日期
+///
+///   - 收缩经期：O(m)
+///   - 删除经期：O(m)
+///
+///   - 设置痛感：O(1)
+///   - 设置流量：O(1)
+///   - 设置心情：O(1)
+///
+/// **周期类型刷新：**
+///
+/// 当操作完日期的周期类型后，需要刷新数据，以计算其他日期的周期类型
+///
+/// **更改周期记录：**
+///
+/// 在更改周期前必然先要查找前后周期端点，如果能找到，前周期必然是结束日期，后周期必
+/// 然是开始日期。合并操作将置空这两个字段，追加操作将设置结束日期为选择日期，提前操
+/// 作将设置开始日期为选择日期
+///
 class RecordViewState extends ChangeNotifier {
   bool loading;
   Map<DateTime, Record> records;
 
+  /// 选择日期时判断操周期作类型
+  ///
+  /// 若当日为经期：
+  ///   - 若当日为中间日期，周期操作类型为缩短
+  ///   - 若当日为开始日期，周期操作类型为删除
+  ///   - 若当日为结束日期，周期操作禁用
+  ///
+  /// 若当日为非经期：
+  ///   - 前周期五天之内，后周期十天之内，周期操作类型为合并
+  ///   - 前周期五天之外，后周期十天之外，周期操作类型为新增
+  ///   - 前周期五天之内，后周期十天之外，周期操作类型为追加
+  ///   - 前周期五天之外，后周期十天之内，周期操作类型为提前
+  // region property: selected
   DateTime _selected;
 
   DateTime get selected => _selected;
@@ -178,27 +222,22 @@ class RecordViewState extends ChangeNotifier {
     _selected = DateTime(value.year, value.month, value.day);
     notifyListeners();
   }
+  // endregion
 
+  // region legacy implementations
   Record get record => records[selected];
 
   set record(Record value) => records[selected] = value;
-
-  RecordViewState(this._selected, BuildContext context) {
-    this.loading = false;
-
-    final home = context.read<HomePageState>();
-    this.records = home.records;
-
-    Future.microtask(() {
-      home.title = "${selected.year} 年 ${selected.month} 月";
-    });
-  }
 
   void setMenses(bool value) {
     if (loading) return;
     value ? _startRecord() : _removeRecord();
   }
 
+  /// 开始记录的操作有四种类型：新增周期，延长周期，提前周期，合并周期
+  ///
+  /// TODO: 独立四种操作，当选择日期时进行操作类型判断，分别赋值。
+  ///
   void _startRecord() {
     final list = <Record>[];
 
@@ -248,8 +287,7 @@ class RecordViewState extends ChangeNotifier {
         if (i > -10) {
           records[now]?.type = Type.Normal;
         } else if (i == -14) {
-          records[now] = (records[now] ?? Record(now))
-            ..type = Type.OvulationDay;
+          records[now] = (records[now] ?? Record(now))..type = Type.OvulationDay;
         } else {
           records[now] = (records[now] ?? Record(now))..type = Type.Ovulation;
         }
@@ -299,8 +337,7 @@ class RecordViewState extends ChangeNotifier {
           records[now]?.pain = 0;
           records[now]?.flow = 0;
         } else if (i == -14) {
-          records[now] = (records[now] ?? Record(now))
-            ..type = Type.OvulationDay;
+          records[now] = (records[now] ?? Record(now))..type = Type.OvulationDay;
         } else {
           records[now] = (records[now] ?? Record(now))..type = Type.Ovulation;
         }
@@ -328,12 +365,22 @@ class RecordViewState extends ChangeNotifier {
     _saveAllToDatabase(list);
     notifyListeners();
   }
+  // endregion
+
+  ///
+  RecordViewState(this._selected, BuildContext context) {
+    this.loading = false;
+  }
+
+  /// 获取当日记录
+  void getRecord(DateTime date){
+
+  }
 
   void setPain(int value) {
     if (loading) return;
 
-    (record = record ?? Record(selected))
-      ..pain = record.pain == value ? 0 : value;
+    (record = record ?? Record(selected))..pain = record.pain == value ? 0 : value;
     _saveToDatabase(record);
 
     notifyListeners();
@@ -342,8 +389,7 @@ class RecordViewState extends ChangeNotifier {
   void setFlow(int value) {
     if (loading) return;
 
-    (record = record ?? Record(selected))
-      ..flow = record.flow == value ? 0 : value;
+    (record = record ?? Record(selected))..flow = record.flow == value ? 0 : value;
     _saveToDatabase(record);
 
     notifyListeners();
@@ -352,8 +398,7 @@ class RecordViewState extends ChangeNotifier {
   void setMood(int value) {
     if (loading) return;
 
-    (record = record ?? Record(selected))
-      ..mood = record.mood == value ? 0 : value;
+    (record = record ?? Record(selected))..mood = record.mood == value ? 0 : value;
     _saveToDatabase(record);
 
     notifyListeners();
