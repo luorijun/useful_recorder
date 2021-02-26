@@ -119,30 +119,9 @@ class HomePageState extends ChangeNotifier {
 
   // endregion
 
-  // region 经期数据
-
-  Map<DateTime, Record> records;
-  Record earliest;
-  Record latest;
-
-  // endregion
-
   HomePageState({String title, int page}) {
     this._older = page;
     this._newer = page;
-
     this._title = title;
-
-    this.records = {};
-
-    _initAsync();
-  }
-
-  void _initAsync() async {
-    final result = await RecordRepository().findAllDesc();
-
-    for (final record in result) {
-      records[record.date] = record;
-    }
   }
 }
