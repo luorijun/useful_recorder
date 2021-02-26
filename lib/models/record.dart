@@ -27,8 +27,6 @@ class Record {
   // 心情
   int mood;
 
-  get isEmpty => type == Type.Normal && pain == 0 && flow == 0 && mood == 0;
-
   Record(
     DateTime date, [
     this.type = Type.Normal,
@@ -38,6 +36,10 @@ class Record {
   ]) {
     this.date = DateTime(date.year, date.month, date.day);
   }
+
+  get isEmpty => (type != Type.MensesStart && type != Type.MensesEnd) && pain == 0 && flow == 0 && mood == 0;
+
+  get isMenses => type == Type.MensesStart || type == Type.Menses || type == Type.MensesEnd;
 
   Record.fromMap(map)
       : date = DateTimeExtension.fromDaySign(map['date']),

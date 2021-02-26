@@ -6,7 +6,7 @@ import 'package:useful_recorder/models/record.dart';
 import 'package:useful_recorder/utils/datetime_extension.dart';
 
 const table = "record";
-const version = 4;
+const version = 9;
 
 const creator = """
 create table $table (

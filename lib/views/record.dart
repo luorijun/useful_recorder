@@ -3,6 +3,8 @@ import 'dart:developer';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'package:useful_recorder/constants.dart';
 
 import 'package:useful_recorder/themes.dart';
 import 'package:useful_recorder/models/record_repository.dart';
@@ -11,6 +13,8 @@ import 'package:useful_recorder/widgets/calendar.dart';
 import 'package:useful_recorder/widgets/rating.dart';
 import 'package:useful_recorder/utils/datetime_extension.dart';
 import 'package:useful_recorder/models/record.dart';
+
+// TODO: 将固定时长检查改为按配置时长
 
 class RecordView extends StatelessWidget {
   @override
@@ -23,20 +27,21 @@ class RecordView extends StatelessWidget {
     });
 
     return ChangeNotifierProvider(
-      create: (context) => RecordViewState(init, context),
+      create: (context) => RecordViewState(init),
       child: ListView(children: [
         Consumer<RecordViewState>(builder: (context, state, child) {
-          final theme = Theme.of(context);
           return MonthView(
             initDate: init,
             startDate: start,
             dateBuilder: (date, month) {
-              final now = state.records[date] ?? Record(date);
+              final now = state.getRecord(date);
 
               Color background;
 
               switch (now.type) {
+                case Type.MensesStart:
                 case Type.Menses:
+                case Type.MensesEnd:
                   background = colors.menses.slight;
                   break;
                 case Type.Ovulation:
@@ -58,14 +63,14 @@ class RecordView extends StatelessWidget {
               if (date.sameMonth(month)) {
                 day = InkWell(
                   borderRadius: BorderRadius.circular(2.0),
-                  onTap: () => state.selected = date,
+                  onTap: () => state.select(date),
                   child: AnimatedContainer(
                     duration: Duration(milliseconds: 150),
                     alignment: Alignment.center,
                     decoration: BoxDecoration(
                       color: background,
                       borderRadius: BorderRadius.circular(2.0),
-                      border: date.sameDay(state.selected) ? Border.all() : null,
+                      border: date.sameDay(state.selected.date) ? Border.all() : null,
                     ),
                     child: Text(
                       "${date.day}",
@@ -81,44 +86,96 @@ class RecordView extends StatelessWidget {
             },
             onMonthChanged: (date) => context.read<HomePageState>().title = "${date.year} 年 ${date.month} 月",
             onDateSelected: (date, month) {
-              final record = state.records[date] ?? Record(date);
+              final record = state.getRecord(date);
               context.read<HomePageState>().title = "${date.year} 年 ${date.month} 月"
                   "，${record.type}";
-              state.selected = date;
+              state.select(date);
             },
           );
         }),
-        ListTile(
-          title: Text("记录"),
-          dense: true,
-          enabled: false,
-          trailing: TextButton(
-            child: Text("打印"),
-            onPressed: () async {
-              final list = await RecordRepository().findAllDesc();
-              for (var value in list) {
-                log("$value");
-              }
-            },
-          ),
-        ),
         Consumer<RecordViewState>(builder: (context, state, child) {
-          final record = state.record ?? Record(state.selected);
+          return ListTile(
+            title: Text("记录"),
+            dense: true,
+            enabled: false,
+            trailing: TextButton(
+              child: Text("打印"),
+              onPressed: () async {
+                final dbList = await RecordRepository().findAllAsc();
+                log("=== database : ${dbList.length} ===");
+                for (final value in dbList) {
+                  log("${value.date.toDateString()} : ${value.type}");
+                }
 
-          return state.selected.isAfter(DateTime.now())
+                final memoList = state._records;
+                log("=== memory : ${memoList.length} ===");
+                memoList.forEach((key, value) {
+                  // if (value.isMenses)
+                  log("${value.date.toDateString()} : ${value.type}");
+                });
+              },
+            ),
+          );
+        }),
+        Consumer<RecordViewState>(builder: (context, state, child) {
+          final record = state.selected;
+
+          return state.selected.date.isFuture
               ? ListTile(
                   title: Text("未来的日期无法编辑"),
                   enabled: false,
                 )
               : Column(children: [
+                  // ====================
+                  // == 经期状态切换栏
+                  // ====================
                   SwitchListTile(
-                    title: Text("经期"),
-                    value: record.type == Type.Menses,
+                    title: Builder(builder: (context) {
+                      switch (operation(state)) {
+                        case MensesOperation.Merge:
+                          return Text("经期 - 合并");
+                        case MensesOperation.Add:
+                          return Text("经期 - 新增");
+                        case MensesOperation.Append:
+                          return Text("经期 - 追加");
+                        case MensesOperation.Advance:
+                          return Text("经期 - 提前");
+                        case MensesOperation.Shrink:
+                          return Text("经期 - 缩减");
+                        case MensesOperation.Remove:
+                          return Text("经期 - 删除");
+                        default:
+                          return Text("经期 - 处理异常");
+                      }
+                    }),
+                    value: record.isMenses,
                     onChanged: (value) {
-                      context.read<RecordViewState>().setMenses(value);
+                      if (!record.isMenses) {
+                        if (isMerge(state)) {
+                          log("merge");
+                          state.mergeMenses();
+                        } else if (isAdd(state)) {
+                          log("add");
+                          state.addMenses();
+                        } else if (isAppend(state)) {
+                          log("append");
+                          state.appendMenses();
+                        } else if (isAdvance(state)) {
+                          log("advance");
+                          state.advanceMenses();
+                        }
+                      } else {
+                        if (record.type == Type.MensesStart) {
+                          log("remove");
+                          state.removeMenses();
+                        } else {
+                          log("shrink");
+                          state.shrinkMenses();
+                        }
+                      }
                     },
                   ),
-                  if (record.type == Type.Menses)
+                  if (record.isMenses)
                     RatingListTile(
                       title: Text("痛感"),
                       icon: FontAwesomeIcons.bolt,
@@ -129,7 +186,7 @@ class RecordView extends StatelessWidget {
                         context.read<RecordViewState>().setPain(value);
                       },
                     ),
-                  if (record.type == Type.Menses)
+                  if (record.isMenses)
                     RatingListTile(
                       title: Text("流量"),
                       icon: FontAwesomeIcons.tint,
@@ -160,7 +217,33 @@ class RecordView extends StatelessWidget {
       ]),
     );
   }
+
+  MensesOperation operation(RecordViewState state) {
+    if (state.selected.isMenses && state.selected.type == Type.MensesStart) {
+      return MensesOperation.Remove;
+    } else if (state.selected.isMenses) {
+      return MensesOperation.Shrink;
+    } else if (state.prev == null && state.next == null) {
+      return MensesOperation.Add;
+    } else if (state.prev == null) {
+      return MensesOperation.Advance;
+    } else if (state.next == null) {
+      return MensesOperation.Append;
+    } else {
+      return MensesOperation.Merge;
+    }
+  }
 }
+
+bool isMerge(RecordViewState state) => state.prev != null && state.next != null;
+
+bool isAdd(RecordViewState state) => state.prev == null && state.next == null;
+
+bool isAppend(RecordViewState state) => state.prev != null && state.next == null;
+
+bool isAdvance(RecordViewState state) => state.prev == null && state.next != null;
+
+enum MensesOperation { Merge, Add, Append, Advance, Shrink, Remove }
 
 /// 日历记录页
 ///
@@ -168,12 +251,10 @@ class RecordView extends StatelessWidget {
 ///   - 记录表
 ///
 /// 属性：
-///   - 选择日期的记录
+///   - 当日（选择日）记录
 ///
 /// 函数：
-///   - 查询当日记录：O(1) 通过记录表查询
-///
-///   TODO: 经期操作后，周期类型不用全局刷新，只需要刷新受影响的经期和它的排卵期
+///   - 选择日期：O(1) 通过记录表查询
 ///
 ///   - 合并经期：O(m) 将前周期的结束日期与后周期的开始日期的周期类型都置为空
 ///   - 新增经期：O(m) 将选择日期的周期类型置为开始，若第五天不为未来日期，则将其置为结束
@@ -198,231 +279,257 @@ class RecordView extends StatelessWidget {
 /// 作将设置开始日期为选择日期
 ///
 class RecordViewState extends ChangeNotifier {
+  Map<DateTime, Record> _records;
+
   bool loading;
-  Map<DateTime, Record> records;
+  Record selected;
+  Record prev;
+  Record next;
 
-  /// 选择日期时判断操周期作类型
-  ///
-  /// 若当日为经期：
-  ///   - 若当日为中间日期，周期操作类型为缩短
-  ///   - 若当日为开始日期，周期操作类型为删除
-  ///   - 若当日为结束日期，周期操作禁用
-  ///
-  /// 若当日为非经期：
-  ///   - 前周期五天之内，后周期十天之内，周期操作类型为合并
-  ///   - 前周期五天之外，后周期十天之外，周期操作类型为新增
-  ///   - 前周期五天之内，后周期十天之外，周期操作类型为追加
-  ///   - 前周期五天之外，后周期十天之内，周期操作类型为提前
-  // region property: selected
-  DateTime _selected;
-
-  DateTime get selected => _selected;
-
-  set selected(DateTime value) {
-    _selected = DateTime(value.year, value.month, value.day);
-    notifyListeners();
-  }
-  // endregion
-
-  // region legacy implementations
-  Record get record => records[selected];
-
-  set record(Record value) => records[selected] = value;
-
-  void setMenses(bool value) {
-    if (loading) return;
-    value ? _startRecord() : _removeRecord();
+  /// 初始化数据
+  RecordViewState(DateTime initDate) {
+    _records = {};
+    selected = Record(initDate);
+    _refreshData();
   }
 
-  /// 开始记录的操作有四种类型：新增周期，延长周期，提前周期，合并周期
-  ///
-  /// TODO: 独立四种操作，当选择日期时进行操作类型判断，分别赋值。
-  ///
-  void _startRecord() {
-    final list = <Record>[];
+  Record getRecord(DateTime date) => _records[date] ?? Record(date);
 
-    // 当天为经期
-    record = (record ?? Record(selected))..type = Type.Menses;
-    list.add(record);
+  Record getRealRecord(DateTime date) => _records.putIfAbsent(date, () => Record(date));
 
-    // 如果前五天内有经期，则本次操作为追加操作
-    bool append = false;
-    for (var i = -5; i < 0; i++) {
-      final now = selected.add(Duration(days: i));
+  /// 获取当日记录
+  void select(DateTime date) {
+    selected = getRecord(date);
 
-      if (append) {
-        records[now] = (records[now] ?? Record(now))..type = Type.Menses;
-        list.add(records[now]);
-      } else {
-        if (records[now]?.type == Type.Menses) {
-          append = true;
-        }
-      }
-    }
+    prev = null;
+    for (int i = 1; i <= 5; i++) {
+      var prevDate = selected.date - i.day;
+      final prevRecord = getRecord(prevDate);
 
-    // 后四天也为经期
-    bool insert = !append;
-    for (var i = 4; i > 0; i--) {
-      final now = selected.add(Duration(days: i));
-
-      if (insert) {
-        if (!now.isAfter(DateTime.now())) {
-          records[now] = (records[now] ?? Record(now))..type = Type.Menses;
-          list.add(records[now]);
-        }
-      } else {
-        if (records[now]?.type == Type.Menses) {
-          insert = true;
-        }
-      }
-    }
-
-    // 前五天内没经期，则为新的周期，并计算排卵期
-    if (!append)
-      for (var i = -1; i > -19; i--) {
-        final now = selected.add(Duration(days: i));
-
-        if (records[now]?.type == Type.Menses) break;
-
-        if (i > -10) {
-          records[now]?.type = Type.Normal;
-        } else if (i == -14) {
-          records[now] = (records[now] ?? Record(now))..type = Type.OvulationDay;
-        } else {
-          records[now] = (records[now] ?? Record(now))..type = Type.Ovulation;
-        }
-
-        if (records[now] != null) list.add(records[now]);
-      }
-
-    _saveAllToDatabase(list);
-    notifyListeners();
-  }
-
-  void _removeRecord() {
-    final list = <Record>[];
-
-    // 删除从当天开始连续的经期，最终指向经期结束的后一天
-    var next = selected;
-    while (records[next]?.type == Type.Menses) {
-      records[next]
-        ..type = Type.Normal
-        ..pain = 0
-        ..flow = 0;
-      list.add(records[next]);
-
-      next = next.add(Duration(days: 1));
-    }
-
-    // 搜索经期后十八天内是否有下一个经期（此经期的排卵期会被覆盖）
-    Record after;
-    for (var i = 0; i < 18; i++) {
-      final now = next.add(Duration(days: i));
-
-      if (records[now] != null && records[now].type == Type.Menses) {
-        after = records[now];
+      if (prevRecord.type == Type.MensesEnd) {
+        prev = prevRecord;
         break;
       }
     }
 
-    // 如果有下一个经期，则恢复被覆盖的排卵期记录
-    if (after != null)
-      for (var i = -1; i > -19; i--) {
-        final now = after.date.add(Duration(days: i));
+    next = null;
+    for (int i = 1; i <= 10; i++) {
+      var nextDate = selected.date + i.day;
+      final nextRecord = getRecord(nextDate);
 
-        if (records[now]?.type == Type.Menses) break;
-
-        if (i > -10) {
-          records[now]?.type = Type.Normal;
-          records[now]?.pain = 0;
-          records[now]?.flow = 0;
-        } else if (i == -14) {
-          records[now] = (records[now] ?? Record(now))..type = Type.OvulationDay;
-        } else {
-          records[now] = (records[now] ?? Record(now))..type = Type.Ovulation;
-        }
-
-        if (records[now] != null) list.add(records[now]);
+      if (nextRecord.type == Type.MensesStart) {
+        next = nextRecord;
+        break;
       }
+    }
 
-    // 如果是整个经期被取消，则删除排卵期记录
-    var prev = selected.subtract(Duration(days: 1));
-    if (records[prev] == null || records[prev].type != Type.Menses)
-      for (var i = -1; i > -19; i--) {
-        final now = records[selected.add(Duration(days: i))];
-
-        if (now != null && now.type == Type.Menses) break;
-
-        if (i < -9) {
-          now
-            ..type = Type.Normal
-            ..pain = 0
-            ..flow = 0;
-          list.add(now);
-        }
-      }
-
-    _saveAllToDatabase(list);
     notifyListeners();
   }
-  // endregion
 
-  ///
-  RecordViewState(this._selected, BuildContext context) {
-    this.loading = false;
+  /// 合并周期
+  Future<void> mergeMenses() async {
+    if (loading) return;
+    assert(!selected.isMenses);
+    assert(prev != null && next != null);
+
+    prev.type = Type.Normal;
+    next.type = Type.Normal;
+
+    await _saveRecord(prev);
+    await _saveRecord(next);
+    _refreshData();
   }
 
-  /// 获取当日记录
-  void getRecord(DateTime date){
+  /// 提前周期
+  void advanceMenses() async {
+    if (loading) return;
+    assert(!selected.isMenses);
+    assert(prev == null && next != null);
 
+    next.type = Type.Normal;
+    selected.type = Type.MensesStart;
+
+    await _saveRecord(next);
+    await _saveRecord(selected);
+    _refreshData();
   }
 
-  void setPain(int value) {
+  /// 追加周期
+  void appendMenses() async {
+    if (loading) return;
+    assert(!selected.isMenses);
+    assert(prev != null && next == null);
+
+    prev.type = Type.Normal;
+    selected.type = Type.MensesEnd;
+
+    await _saveRecord(prev);
+    await _saveRecord(selected);
+    _refreshData();
+  }
+
+  /// 新增周期
+  void addMenses() async {
+    if (loading) return;
+    assert(!selected.isMenses);
+    assert(prev == null && next == null);
+
+    selected.type = Type.MensesStart;
+    log("${selected.isEmpty}");
+    await _saveRecord(selected);
+
+    final sp = await SharedPreferences.getInstance();
+    final endDate = selected.date + sp.getInt(MENSES_LENGTH).day - 1.day;
+    if (!endDate.isFuture) {
+      final endRecord = getRecord(endDate);
+      endRecord.type = Type.MensesEnd;
+      await _saveRecord(endRecord);
+    }
+
+    _refreshData();
+  }
+
+  /// 缩短周期
+  void shrinkMenses() async {
+    if (loading) return;
+    assert(selected.type == Type.Menses || selected.type == Type.MensesEnd);
+
+    final endDate = selected.date - 1.day;
+    final newEnd = getRecord(endDate);
+    assert(newEnd.type != Type.MensesStart);
+
+    newEnd.type = Type.MensesEnd;
+
+    var oldEnd = selected;
+    while (!oldEnd.date.isFuture && oldEnd.type != Type.MensesEnd) {
+      final nextDate = oldEnd.date + 1.day;
+      oldEnd = _records.putIfAbsent(nextDate, () => Record(nextDate));
+    }
+    oldEnd
+      ..type = Type.Normal
+      ..pain = 0
+      ..flow = 0;
+
+    await _saveRecord(newEnd);
+    if (!oldEnd.date.isFuture) {
+      await _saveRecord(oldEnd);
+    }
+    _refreshData();
+  }
+
+  /// 删除周期
+  void removeMenses() async {
+    if (loading) return;
+    assert(selected.type == Type.MensesStart);
+
+    selected
+      ..type = Type.Normal
+      ..pain = 0
+      ..flow = 0;
+
+    var testEnd = selected;
+    while (testEnd.type != Type.MensesEnd && !testEnd.date.isFuture) {
+      final nextDate = testEnd.date + 1.day;
+      testEnd = _records.putIfAbsent(nextDate, () => Record(nextDate));
+    }
+
+    testEnd
+      ..type = Type.Normal
+      ..pain = 0
+      ..flow = 0;
+
+    await _saveRecord(selected);
+    if (!testEnd.date.isFuture) {
+      await _saveRecord(testEnd);
+    }
+    _refreshData();
+  }
+
+  // 设置痛感
+  void setPain(int value) async {
     if (loading) return;
 
-    (record = record ?? Record(selected))..pain = record.pain == value ? 0 : value;
-    _saveToDatabase(record);
+    selected.pain = value;
 
-    notifyListeners();
+    await _saveRecord(selected);
+    _refreshData();
   }
 
-  void setFlow(int value) {
+  // 设置流量
+  void setFlow(int value) async {
     if (loading) return;
 
-    (record = record ?? Record(selected))..flow = record.flow == value ? 0 : value;
-    _saveToDatabase(record);
+    selected.flow = value;
 
-    notifyListeners();
+    await _saveRecord(selected);
+    _refreshData();
   }
 
-  void setMood(int value) {
+  // 设置心情
+  void setMood(int value) async {
     if (loading) return;
 
-    (record = record ?? Record(selected))..mood = record.mood == value ? 0 : value;
-    _saveToDatabase(record);
+    selected.mood = value;
 
-    notifyListeners();
+    await _saveRecord(selected);
+    _refreshData();
   }
 
-  _saveToDatabase(Record record) async {
+  /// 刷新数据
+  ///   - 刷新纪录列表
+  ///   - 刷新选择项
+  Future<void> _refreshData() async {
     loading = true;
+    notifyListeners();
 
-    await RecordRepository().save(record);
+    final list = await RecordRepository().findAllAsc();
+    _records = Map.fromIterable(
+      list,
+      key: (item) => item.date,
+      value: (item) => item,
+    );
+
+    var length = -1;
+    var first;
+    if (list.isNotEmpty) {
+      first = list.first;
+      length = DateTimeExtension.diff(first.date, DateTime.now());
+    }
+
+    var prevType = Type.Normal;
+    for (var i = 0; i <= length; i++) {
+      // TODO: 傻逼 bug 加号重载不起作用
+      final date = first.date.add(Duration(days: i));
+      final record = getRealRecord(date);
+
+      if (record.type == Type.MensesStart) {
+        for (int i = 1; i <= 18; i++) {
+          final testDate = record.date - i.day;
+          final testRecord = getRealRecord(testDate);
+
+          if (testRecord.type == Type.MensesEnd) break;
+
+          if (i == 14) {
+            testRecord.type = Type.OvulationDay;
+          } else if (i > 9) {
+            testRecord.type = Type.Ovulation;
+          }
+        }
+      } else if (record.type != Type.MensesEnd && prevType == Type.MensesStart) {
+        record.type = Type.Menses;
+      }
+
+      if (record.type == Type.MensesStart || record.type == Type.MensesEnd) {
+        prevType = record.type;
+      }
+    }
 
     loading = false;
     notifyListeners();
   }
 
-  _saveAllToDatabase(Iterable<Record> records) async {
-    loading = true;
-
-    final list = <Future>[];
-    records.forEach((record) {
-      list.add(RecordRepository().save(record));
-    });
-
-    await Future.wait(list);
-    loading = false;
-    notifyListeners();
+  /// 保存记录到数据库
+  Future<void> _saveRecord(Record record) async {
+    return RecordRepository().save(record);
   }
 }

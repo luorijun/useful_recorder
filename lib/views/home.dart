@@ -1,9 +1,6 @@
-import 'dart:developer';
-
 import 'package:animations/animations.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:useful_recorder/models/period.dart';
 import 'package:useful_recorder/models/record.dart';
 import 'package:useful_recorder/models/record_repository.dart';
 
