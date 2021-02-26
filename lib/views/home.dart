@@ -6,14 +6,14 @@ import 'package:useful_recorder/models/record_repository.dart';
 
 import 'package:useful_recorder/views/period.dart';
 import 'package:useful_recorder/views/record.dart';
-import 'package:useful_recorder/views/analyse.dart';
+import 'package:useful_recorder/views/analysis.dart';
 import 'package:useful_recorder/views/settings.dart';
 
 class HomePage extends StatelessWidget {
   final bodies = [
     PeriodView(),
     RecordView(),
-    AnalyseView(),
+    AnalysisView(),
     SettingsView(),
   ];
 

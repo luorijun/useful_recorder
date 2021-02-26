@@ -15,6 +15,7 @@ import 'package:useful_recorder/utils/datetime_extension.dart';
 import 'package:useful_recorder/models/record.dart';
 
 // TODO: 将固定时长检查改为按配置时长
+// TODO: 检查优化组件结构，保证重建效率
 
 class RecordView extends StatelessWidget {
   @override
@@ -128,6 +129,7 @@ class RecordView extends StatelessWidget {
               : Column(children: [
                   // ====================
                   // == 经期状态切换栏
+                  // == TODO: 统一操作检查逻辑，删除 isXXX 检查方式
                   // ====================
                   SwitchListTile(
                     title: Builder(builder: (context) {
@@ -152,24 +154,18 @@ class RecordView extends StatelessWidget {
                     onChanged: (value) {
                       if (!record.isMenses) {
                         if (isMerge(state)) {
-                          log("merge");
                           state.mergeMenses();
                         } else if (isAdd(state)) {
-                          log("add");
                           state.addMenses();
                         } else if (isAppend(state)) {
-                          log("append");
                           state.appendMenses();
                         } else if (isAdvance(state)) {
-                          log("advance");
                           state.advanceMenses();
                         }
                       } else {
                         if (record.type == Type.MensesStart) {
-                          log("remove");
                           state.removeMenses();
                         } else {
-                          log("shrink");
                           state.shrinkMenses();
                         }
                       }
@@ -375,7 +371,6 @@ class RecordViewState extends ChangeNotifier {
     assert(prev == null && next == null);
 
     selected.type = Type.MensesStart;
-    log("${selected.isEmpty}");
     await _saveRecord(selected);
 
     final sp = await SharedPreferences.getInstance();
@@ -498,7 +493,7 @@ class RecordViewState extends ChangeNotifier {
 
     var prevType = Type.Normal;
     for (var i = 0; i <= length; i++) {
-      // TODO: 傻逼 bug 加号重载不起作用
+      // TODO: 傻逼问题没找到，加号重载不起作用
       final date = first.date.add(Duration(days: i));
       final record = getRealRecord(date);
 

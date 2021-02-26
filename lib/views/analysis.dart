@@ -1,3 +1,5 @@
+import 'dart:developer';
+
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:useful_recorder/models/period.dart';
@@ -6,7 +8,7 @@ import 'package:useful_recorder/models/record_repository.dart';
 import 'package:useful_recorder/views/home.dart';
 import 'package:useful_recorder/utils/datetime_extension.dart';
 
-class AnalyseView extends StatelessWidget {
+class AnalysisView extends StatelessWidget {
   /// 分析元素：
   ///   - 周期数
   ///   - 异常周期数
@@ -28,7 +30,7 @@ class AnalyseView extends StatelessWidget {
     Future.microtask(() => context.read<HomePageState>().title = "分析");
 
     return ChangeNotifierProvider(
-      create: (context) => AnalyseViewState(),
+      create: (context) => AnalysisViewState(),
       child: ListView(
         children: [
           ListTile(
@@ -51,8 +53,8 @@ class AnalyseView extends StatelessWidget {
                       ),
                     ),
                     SizedBox(height: 8),
-                    Selector<AnalyseViewState, int>(
-                      selector: (context, state) => state.periodCount,
+                    Selector<AnalysisViewState, int>(
+                      selector: (context, state) => state.periods.length,
                       builder: (context, value, child) {
                         return Text(
                           "$value",
@@ -81,8 +83,8 @@ class AnalyseView extends StatelessWidget {
                       ),
                     ),
                     SizedBox(height: 8),
-                    Selector<AnalyseViewState, int>(
-                      selector: (context, state) => state.abnormalCount,
+                    Selector<AnalysisViewState, int>(
+                      selector: (context, state) => state.abnormal.length,
                       builder: (context, value, child) {
                         return Text(
                           "$value",
@@ -102,15 +104,43 @@ class AnalyseView extends StatelessWidget {
             enabled: false,
             dense: true,
             title: Text("周期"),
+            trailing: Consumer<AnalysisViewState>(
+              builder: (context, state, child) {
+                return TextButton(
+                  child: Text("打印"),
+                  onPressed: () {
+                    for (var period in state.periods) {
+                      log("$period");
+                    }
+                  },
+                );
+              },
+            ),
           ),
-          Consumer<AnalyseViewState>(
+          Consumer<AnalysisViewState>(
             builder: (context, state, child) {
               return Column(
                 children: state.periods.map((period) {
                   return Column(children: [
                     ListTile(
-                      title: Text("${period.firstDay.toDateString()} - ${period.mensesLength} 天"),
-                      trailing: Chip(label: Text("异常")),
+                      title: Text("${period.records.first.date.toDateString()}"
+                          " - ${period.menses} 天"
+                          " - ${period.period} 天"),
+                      trailing: Wrap(
+                        spacing: 4,
+                        children: [
+                          if (period.processing)
+                            Chip(
+                              label: Text("进行中"),
+                              backgroundColor: Colors.blue.shade200,
+                            ),
+                          if (period.abnormal)
+                            Chip(
+                              label: Text("异常"),
+                              backgroundColor: Colors.red.shade100,
+                            ),
+                        ],
+                      ),
                     ),
                   ]);
                 }).toList(growable: false),
@@ -123,44 +153,43 @@ class AnalyseView extends StatelessWidget {
   }
 }
 
-class AnalyseViewState extends ChangeNotifier {
+class AnalysisViewState extends ChangeNotifier {
   bool loading;
-
   List<Period> periods;
-  List<Period> abnormalPeriods;
+  List<Period> abnormal;
 
-  int get periodCount => periods.length;
-
-  int get abnormalCount => abnormalPeriods.length;
-
-  AnalyseViewState() {
+  AnalysisViewState() {
     loading = true;
     periods = [];
-    abnormalPeriods = [];
-
+    abnormal = [];
     _analysePeriod();
   }
 
   _analysePeriod() async {
-    final records = await RecordRepository().findAllAsc();
+    final list = await RecordRepository().findAllAsc();
 
-    Record prev;
-    Period period;
-    for (var record in records) {
-      if (record.type == Type.Menses) {
-        final diff = record.date.difference(prev?.date ?? record.date).inDays;
-        if (diff != 1) {
-          period?.lastDay = record.date.subtract(Duration(days: 1));
-          if (period?.abnormal ?? false) {
-            abnormalPeriods.add(period);
-          }
-          periods.add(period = Period());
+    var period;
+    for (var record in list) {
+      if (!record.isMenses) continue;
+
+      if (record.type == Type.MensesStart) {
+        if (period != null) period.end(record.date);
+        period = Period();
+        period.add(record);
+      } else {
+        period.add(record);
+        if (record.type == Type.MensesEnd) {
+          periods.add(period);
         }
-        period.mensesLength++;
       }
-      period?.add(record);
-      if (record.type == Type.Menses) prev = record;
     }
+
+    if (period.records.last.type != Type.MensesEnd) {
+      periods.add(period);
+    }
+    period.end(DateTime.now() + 1.day);
+    abnormal = periods.where((item) => item.abnormal).toList(growable: false);
+
     loading = false;
     notifyListeners();
   }

@@ -1,29 +1,36 @@
+import 'dart:developer';
+
 import 'package:useful_recorder/models/record.dart';
 import 'package:useful_recorder/utils/datetime_extension.dart';
 
 class Period {
   final List<Record> records = [];
-  DateTime lastDay = DateTime.now().date;
-  int mensesLength = 0;
+  int menses = 0;
+  int period = 0;
 
-  DateTime get firstDay => records.first?.date;
+  bool get abnormal => (menses < 3 || menses > 7 || period > 35 || period < 15) && !processing;
 
-  int get length {
-    if (records.length < 2) return records.length;
-    return lastDay.difference(records.first.date).inDays;
+  bool get processing => records.last.type != Type.MensesEnd;
+
+  void add(Record record) {
+    if (records.isEmpty) assert(record.type == Type.MensesStart);
+
+    menses = records.isEmpty
+        ? DateTimeExtension.diff(DateTime.now(), record.date) + 1
+        : record.type == Type.MensesEnd
+            ? DateTimeExtension.diff(record.date + 1.day, records.first.date)
+            : menses;
+    records.add(record);
   }
 
-  bool get abnormal => length < 21 || length > 35;
-
-  void add(Record record) => records.add(record);
+  void end(DateTime date) {
+    period = DateTimeExtension.diff(date, records.first.date);
+  }
 
   @override
   String toString() {
     return 'Period{'
-        'records: $length, '
-        'mensesLength: $mensesLength, '
-        'length: $length, '
-        'lastDay: $lastDay, '
-        'exception: $abnormal}';
+        'records: $records, '
+        'abnormal: $abnormal}';
   }
 }
