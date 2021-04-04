@@ -1,8 +1,6 @@
 import 'package:animations/animations.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:useful_recorder/models/record.dart';
-import 'package:useful_recorder/models/record_repository.dart';
 
 import 'package:useful_recorder/views/period.dart';
 import 'package:useful_recorder/views/record.dart';
@@ -11,17 +9,17 @@ import 'package:useful_recorder/views/settings.dart';
 
 class HomePage extends StatelessWidget {
   final bodies = [
-    PeriodView(),
+    // PeriodView(),
     RecordView(),
     AnalysisView(),
     SettingsView(),
   ];
 
   final navs = [
-    BottomNavigationBarItem(
-      icon: Icon(Icons.timelapse),
-      label: "首页",
-    ),
+    // BottomNavigationBarItem(
+    //   icon: Icon(Icons.timelapse),
+    //   label: "首页",
+    // ),
     BottomNavigationBarItem(
       icon: Icon(Icons.calendar_today),
       label: "记录",
@@ -41,7 +39,7 @@ class HomePage extends StatelessWidget {
     return ChangeNotifierProvider(
       create: (context) => HomePageState(
         title: "首页",
-        page: 1,
+        page: 0,
       ),
       child: Scaffold(
         appBar: AppBar(

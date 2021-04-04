@@ -10,7 +10,7 @@ import 'package:useful_recorder/themes.dart';
 import 'package:useful_recorder/models/record_repository.dart';
 import 'package:useful_recorder/views/home.dart';
 import 'package:useful_recorder/widgets/calendar.dart';
-import 'package:useful_recorder/widgets/rating.dart';
+import 'package:useful_recorder/widgets/more_list_tile.dart';
 import 'package:useful_recorder/utils/datetime_extension.dart';
 import 'package:useful_recorder/models/record.dart';
 
@@ -119,9 +119,9 @@ class RecordView extends StatelessWidget {
           );
         }),
         Consumer<RecordViewState>(builder: (context, state, child) {
-          final record = state.selected;
+          final selected = state.selected;
 
-          return state.selected.date.isFuture
+          return selected.date.isFuture
               ? ListTile(
                   title: Text("未来的日期无法编辑"),
                   enabled: false,
@@ -150,9 +150,9 @@ class RecordView extends StatelessWidget {
                           return Text("经期 - 处理异常");
                       }
                     }),
-                    value: record.isMenses,
+                    value: selected.isMenses,
                     onChanged: (value) {
-                      if (!record.isMenses) {
+                      if (!selected.isMenses) {
                         if (isMerge(state)) {
                           state.mergeMenses();
                         } else if (isAdd(state)) {
@@ -163,7 +163,7 @@ class RecordView extends StatelessWidget {
                           state.advanceMenses();
                         }
                       } else {
-                        if (record.type == Type.MensesStart) {
+                        if (selected.type == Type.MensesStart) {
                           state.removeMenses();
                         } else {
                           state.shrinkMenses();
@@ -171,23 +171,23 @@ class RecordView extends StatelessWidget {
                       }
                     },
                   ),
-                  if (record.isMenses)
+                  if (selected.isMenses)
                     RatingListTile(
                       title: Text("痛感"),
                       icon: FontAwesomeIcons.bolt,
                       count: 5,
-                      selected: record.pain,
+                      selected: selected.pain,
                       color: Colors.yellow,
                       onRating: (value) {
                         context.read<RecordViewState>().setPain(value);
                       },
                     ),
-                  if (record.isMenses)
+                  if (selected.isMenses)
                     RatingListTile(
                       title: Text("流量"),
                       icon: FontAwesomeIcons.tint,
                       count: 5,
-                      selected: record.flow,
+                      selected: selected.flow,
                       color: Colors.red,
                       onRating: (value) {
                         context.read<RecordViewState>().setFlow(value);
@@ -202,7 +202,7 @@ class RecordView extends StatelessWidget {
                       FontAwesomeIcons.angry,
                       FontAwesomeIcons.dizzy,
                     ],
-                    selected: record.mood,
+                    selected: selected.mood,
                     color: Colors.amber,
                     onVote: (value) {
                       context.read<RecordViewState>().setMood(value);
