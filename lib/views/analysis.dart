@@ -1,160 +1,122 @@
-import 'dart:developer';
-
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+
 import 'package:useful_recorder/models/period.dart';
 import 'package:useful_recorder/models/record.dart';
 import 'package:useful_recorder/models/record_repository.dart';
 import 'package:useful_recorder/views/home.dart';
+import 'package:useful_recorder/widgets/headers.dart';
 import 'package:useful_recorder/utils/datetime_extension.dart';
 
+// TODO: 展示经期每日流量与痛感（可选：可编辑）
 class AnalysisView extends StatelessWidget {
-  /// 分析元素：
-  ///   - 周期数
-  ///   - 异常周期数
-  ///   - 周期详情列表
-  /// 周期详情：
-  ///   - 周期阶段图
-  ///   - 开始日期
-  ///   - 结束日期
-  ///   - 天数
-  ///
-  /// 阶段图：
-  ///   - 经期开始
-  ///   - 经期结束
-  ///   - 排卵期开始
-  ///   - 排卵日
-  ///   - 排卵期结束
   @override
   Widget build(BuildContext context) {
-    Future.microtask(() => context.read<HomePageState>().title = "分析");
+    Future.microtask(() {
+      return context.read<HomePageState>().title = "分析";
+    });
 
     return ChangeNotifierProvider(
       create: (context) => AnalysisViewState(),
-      child: ListView(
-        children: [
-          ListTile(
-            title: Text("统计"),
-            dense: true,
-            enabled: false,
-          ),
-          Row(children: [
-            Expanded(
-              flex: 1,
-              child: Card(
-                margin: EdgeInsets.fromLTRB(16, 8, 8, 8),
-                child: Column(
-                  children: [
-                    SizedBox(height: 8),
-                    Text(
-                      "总周期数",
-                      style: TextStyle(
-                        fontSize: 20,
-                      ),
-                    ),
-                    SizedBox(height: 8),
-                    Selector<AnalysisViewState, int>(
-                      selector: (context, state) => state.periods.length,
-                      builder: (context, value, child) {
-                        return Text(
-                          "$value",
-                          style: TextStyle(
-                            fontSize: 36,
-                          ),
-                        );
-                      },
-                    ),
-                    SizedBox(height: 8),
-                  ],
+      builder: (context, child) {
+        var state = context.watch<AnalysisViewState>();
+
+        return ListView(children: [
+          SectionHeader("统计"),
+          Row(
+            children: [
+              Expanded(
+                child: Container(
+                  padding: EdgeInsets.symmetric(horizontal: 8),
+                  child: InkWell(
+                    child: Column(children: [
+                      Text("总周期", style: normalTitleStyle()),
+                      SizedBox(height: 8),
+                      Text("5", style: normalContentStyle()),
+                    ]),
+                    onTap: () {},
+                  ),
                 ),
               ),
-            ),
-            Expanded(
-              flex: 1,
-              child: Card(
-                margin: EdgeInsets.fromLTRB(8, 8, 16, 8),
-                child: Column(
-                  children: [
+              Container(
+                width: 1,
+                height: 76,
+                color: Colors.grey.shade300,
+              ),
+              Expanded(
+                child: Container(
+                  child: Column(children: [
+                    Text("异常周期", style: exceptionTitleStyle()),
                     SizedBox(height: 8),
-                    Text(
-                      "异常周期",
-                      style: TextStyle(
-                        fontSize: 20,
-                      ),
-                    ),
-                    SizedBox(height: 8),
-                    Selector<AnalysisViewState, int>(
-                      selector: (context, state) => state.abnormal.length,
-                      builder: (context, value, child) {
-                        return Text(
-                          "$value",
-                          style: TextStyle(
-                            fontSize: 36,
-                          ),
-                        );
-                      },
-                    ),
-                    SizedBox(height: 8),
-                  ],
+                    Text("1", style: exceptionContentStyle()),
+                  ]),
                 ),
               ),
-            ),
-          ]),
-          ListTile(
-            enabled: false,
-            dense: true,
-            title: Text("周期"),
-            trailing: Consumer<AnalysisViewState>(
-              builder: (context, state, child) {
-                return TextButton(
-                  child: Text("打印"),
-                  onPressed: () {
-                    for (var period in state.periods) {
-                      log("$period");
-                    }
-                  },
-                );
-              },
-            ),
+            ],
           ),
-          Consumer<AnalysisViewState>(
-            builder: (context, state, child) {
-              return Column(
-                children: state.periods.map((period) {
-                  return Column(children: [
-                    ListTile(
-                      title: Text("${period.records.first.date.toDateString()}"
-                          " - ${period.menses} 天"
-                          " - ${period.period} 天"),
-                      trailing: Wrap(
-                        spacing: 4,
-                        children: [
-                          if (period.processing)
-                            Chip(
-                              label: Text("进行中"),
-                              backgroundColor: Colors.blue.shade200,
-                            ),
-                          if (period.abnormal)
-                            Chip(
-                              label: Text("异常"),
-                              backgroundColor: Colors.red.shade100,
-                            ),
-                        ],
-                      ),
-                    ),
-                  ]);
-                }).toList(growable: false),
-              );
-            },
-          ),
-        ],
-      ),
+          SectionHeader("时间轴"),
+          ...state.periods.reversed.map((period) {
+            var records = period.records;
+
+            return Card(
+              margin: EdgeInsets.fromLTRB(16, 0, 16, 16),
+              child: ExpansionTile(
+                title: Text(
+                  "开始于 ${records.first.date.toDateString()}",
+                  style: durationTextStyle(),
+                ),
+                subtitle: Text("一共 ${period.period} 天，经期持续了 ${period.menses} 天"),
+              ),
+            );
+          }),
+        ]);
+      },
+    );
+  }
+
+  normalTitleStyle() {
+    return TextStyle(
+      fontSize: 18,
+    );
+  }
+
+  normalContentStyle() {
+    return TextStyle(
+      fontSize: 36,
+    );
+  }
+
+  exceptionTitleStyle() {
+    return TextStyle(
+      fontSize: 18,
+      color: Colors.red.shade800,
+    );
+  }
+
+  exceptionContentStyle() {
+    return TextStyle(
+      fontSize: 36,
+      color: Colors.red.shade800,
+    );
+  }
+
+  durationTextStyle() {
+    return TextStyle(
+      fontSize: 12,
+      color: Colors.grey.shade600,
+    );
+  }
+
+  lengthTextStyle() {
+    return TextStyle(
+      fontSize: 16,
     );
   }
 }
 
 class AnalysisViewState extends ChangeNotifier {
   bool loading;
+
   List<Period> periods;
   List<Period> abnormal;
 
@@ -162,10 +124,10 @@ class AnalysisViewState extends ChangeNotifier {
     loading = true;
     periods = [];
     abnormal = [];
-    _analysePeriod();
+    initData();
   }
 
-  _analysePeriod() async {
+  initData() async {
     final list = await RecordRepository().findAllAsc();
 
     var period;
