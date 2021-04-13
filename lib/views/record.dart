@@ -2,17 +2,17 @@ import 'dart:developer';
 
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:useful_recorder/constants.dart';
+import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 
+import 'package:useful_recorder/constants.dart';
 import 'package:useful_recorder/themes.dart';
+import 'package:useful_recorder/models/record.dart';
 import 'package:useful_recorder/models/record_repository.dart';
 import 'package:useful_recorder/views/home.dart';
 import 'package:useful_recorder/widgets/calendar.dart';
 import 'package:useful_recorder/widgets/more_list_tile.dart';
 import 'package:useful_recorder/utils/datetime_extension.dart';
-import 'package:useful_recorder/models/record.dart';
 
 // TODO: 将固定时长检查改为按配置时长
 // TODO: 检查优化组件结构，保证重建效率
