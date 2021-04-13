@@ -1,6 +1,5 @@
 name: useful_recorder
 description: A new Flutter project.
-publish_to: 'none'
 
 version: 1.0.0+1
 environment:
@@ -9,7 +8,7 @@ environment:
 dependencies:
   flutter:
     sdk: flutter
-  cupertino_icons: ^0.1.3
+  cupertino_icons: any
 
   # 状态管理
   provider: any
@@ -20,8 +19,8 @@ dependencies:
 
   # 表现力
   animations: any
-  font_awesome_flutter: 8.11.0
-  fl_chart: ^0.12.3
+  font_awesome_flutter: any
+  flutter_material_pickers: any
 
 dev_dependencies:
   flutter_test:
