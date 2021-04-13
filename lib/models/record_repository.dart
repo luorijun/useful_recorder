@@ -1,5 +1,3 @@
-import 'dart:developer';
-
 import 'package:sqflite/sqflite.dart';
 
 import 'package:useful_recorder/models/record.dart';
@@ -39,11 +37,9 @@ class RecordRepository {
       "$dir/$table.db",
       version: version,
       onCreate: (database, version) {
-        log("CREATE TABLE");
         return database.execute(creator);
       },
       onUpgrade: (database, oldVersion, newVersion) {
-        log("UPDATE TABLE");
         if (newVersion > oldVersion) {
           database.execute(dropper);
           database.execute(creator);

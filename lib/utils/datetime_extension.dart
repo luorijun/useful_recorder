@@ -24,6 +24,8 @@ extension DateTimeExtension on DateTime {
 
   DateTime operator -(Duration duration) => subtract(duration);
 
+  // Duration operator -(DateTime datetime) => difference(datetime);
+
   String toDateString() {
     return "$year 年 $month 月 $day 日";
   }
