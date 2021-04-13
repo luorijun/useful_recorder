@@ -1,15 +1,14 @@
-import 'package:animations/animations.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:animations/animations.dart';
 
-import 'package:useful_recorder/views/period.dart';
 import 'package:useful_recorder/views/record.dart';
 import 'package:useful_recorder/views/analysis.dart';
 import 'package:useful_recorder/views/settings.dart';
 
+// TODO: 标题栏 icon
 class HomePage extends StatelessWidget {
   final bodies = [
-    // PeriodView(),
     RecordView(),
     AnalysisView(),
     SettingsView(),
@@ -77,6 +76,7 @@ class HomePage extends StatelessWidget {
               return BottomNavigationBar(
                 type: BottomNavigationBarType.fixed,
                 currentIndex: index,
+                backgroundColor: Colors.white,
                 onTap: (i) => context.read<HomePageState>().index = i,
                 items: navs,
               );
