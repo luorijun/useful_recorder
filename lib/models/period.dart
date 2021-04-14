@@ -1,34 +1,59 @@
 import 'package:useful_recorder/models/record.dart';
-import 'package:useful_recorder/utils/datetime_extension.dart';
+import 'package:useful_recorder/models/record_repository.dart';
 
 class Period {
+  bool mensesEnd = false;
+  DateTime mensesEndDate;
+
+  bool periodEnd = false;
+  DateTime periodEndDate;
+
   final List<Record> records = [];
-  int menses = 0;
-  int period = 0;
 
-  bool get abnormal => (menses < 3 || menses > 7 || period > 35 || period < 15) && !processing;
+  DateTime get mensesStartDate => records.first.date;
 
-  bool get processing => records.last.type != Type.MensesEnd;
+  int get mensesLength => records.length < 2
+      ? records.length
+      : (mensesEnd ? mensesEndDate : DateTime.now()).difference(mensesStartDate).inDays + 1;
 
+  int get periodLength => records.length < 2
+      ? records.length
+      : (periodEnd ? periodEndDate : DateTime.now()).difference(mensesStartDate).inDays + 1;
+
+  bool get processing => !(mensesEnd && periodEnd);
+
+  bool get mensesAbnormal => (mensesEnd && mensesLength < 2) || mensesLength > 7;
+
+  // TODO: 周期不一定是在固定时间范围内，只要规律即可
+  bool get periodAbnormal => (periodEnd && periodLength < 21) || periodLength > 37;
+
+  bool get abnormal => mensesAbnormal || periodAbnormal;
+
+  Future<List<Record>> get menses async {
+    return await RecordRepository().findAllByDateBetween(
+      mensesStartDate,
+      mensesEndDate,
+    );
+  }
+
+  /// 时间增量顺序追加记录
   void add(Record record) {
-    if (records.isEmpty) assert(record.type == Type.MensesStart);
-
-    menses = records.isEmpty
-        ? DateTimeExtension.diff(DateTime.now(), record.date) + 1
-        : record.type == Type.MensesEnd
-            ? DateTimeExtension.diff(record.date + 1.day, records.first.date)
-            : menses;
     records.add(record);
+
+    if (records.length == 1) {
+      assert(record.type == Type.MensesStart);
+      return;
+    }
+
+    if (record.type == Type.MensesEnd) {
+      mensesEnd = true;
+      mensesEndDate = record.date;
+    }
   }
 
-  void end(DateTime date) {
-    period = DateTimeExtension.diff(date, records.first.date);
-  }
-
-  @override
-  String toString() {
-    return 'Period{'
-        'records: $records, '
-        'abnormal: $abnormal}';
+  /// 周期结束时间
+  void finish(DateTime endDate) {
+    periodEnd = true;
+    periodEndDate = endDate;
   }
 }

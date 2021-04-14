@@ -62,6 +62,24 @@ class RecordRepository {
     return result.map((map) => Record.fromMap(map)).toList();
   }
 
+  Future<List<Record>> findAllByDateBetween(
+    DateTime start,
+    DateTime end, [
+    String order = "date ASC",
+  ]) async {
+    final db = await this.db;
+    final result = await db.query(
+      table,
+      where: "date >= ? and date <= ?",
+      whereArgs: [
+        start.daySign,
+        end.daySign,
+      ],
+      orderBy: order,
+    );
+    return result.map((item) => Record.fromMap(item)).toList();
+  }
+
   Future<Record> findByDate(DateTime date) async {
     final db = await this.db;
     final result = await db.query(

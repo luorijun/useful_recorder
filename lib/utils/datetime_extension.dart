@@ -30,6 +30,10 @@ extension DateTimeExtension on DateTime {
     return "$year 年 $month 月 $day 日";
   }
 
+  String format(String divider) {
+    return "$year$divider$month$divider$day";
+  }
+
   static int diff(DateTime a, DateTime b) {
     return a.difference(b).inDays.abs();
   }

@@ -9,6 +9,7 @@ class RatingListTile extends StatelessWidget {
   final int selected;
   final Color color;
   final RatingEvent onRating;
+  final bool dense;
 
   const RatingListTile({
     Key key,
@@ -18,12 +19,14 @@ class RatingListTile extends StatelessWidget {
     this.selected,
     this.color,
     this.onRating,
+    this.dense = false,
   }) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
     return ListTile(
       title: title,
+      dense: dense,
       trailing: Wrap(
         children: List.generate(
           count,
@@ -31,7 +34,9 @@ class RatingListTile extends StatelessWidget {
             icon: Icon(
               icon,
               color: index < selected ? color : Colors.grey,
+              size: dense ? 20 : 24,
             ),
+            padding: EdgeInsets.all(4),
             onPressed: () {
               return onRating?.call(index + 1);
             },
