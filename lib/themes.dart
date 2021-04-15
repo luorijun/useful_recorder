@@ -20,35 +20,35 @@ class AppTheme {
   final ThemeData normal;
   final ThemeData menses;
   final ThemeData ovulation;
+  final ThemeData dark;
 
-  AppTheme({
-    @required AppColor colors,
-    @required ThemeDefinition normal,
-    @required ThemeDefinition menses,
-    @required ThemeDefinition ovulation,
-  })  : this.normal = normal.call(colors.normal),
+  AppTheme(
+      {@required AppColor colors,
+      @required ThemeDefinition normal,
+      @required ThemeDefinition menses,
+      @required ThemeDefinition ovulation,
+      @required ThemeDefinition dark})
+      : this.normal = normal.call(colors.normal),
         this.menses = menses.call(colors.menses),
-        this.ovulation = ovulation.call(colors.ovulation);
+        this.ovulation = ovulation.call(colors.ovulation),
+        this.dark = dark.call(colors.dark);
 }
 
 class AppColor {
   final ColorDefinition normal;
   final ColorDefinition menses;
   final ColorDefinition ovulation;
+  final ColorDefinition dark;
 
-  AppColor({
-    @required this.normal,
-    @required this.menses,
-    @required this.ovulation,
-  });
+  AppColor({@required this.normal, @required this.menses, @required this.ovulation, @required this.dark});
 }
 
 final colors = AppColor(
   normal: ColorDefinition(
-    primary: Colors.green,
-    secondary: Colors.greenAccent,
-    weak: Colors.green.shade300,
-    slight: Colors.green.shade200,
+    primary: Colors.pink.shade300,
+    secondary: Colors.pinkAccent.shade200,
+    weak: Colors.pink.shade200,
+    slight: Colors.pink.shade100,
   ),
   menses: ColorDefinition(
     primary: Colors.red,
@@ -61,6 +61,12 @@ final colors = AppColor(
     secondary: Colors.purpleAccent,
     weak: Colors.purple.shade300,
     slight: Colors.purple.shade200,
+  ),
+  dark: ColorDefinition(
+    primary: Colors.black54,
+    secondary: Colors.pink,
+    weak: Colors.pink.shade300,
+    slight: Colors.pink.shade100,
   ),
 );
 
@@ -89,6 +95,10 @@ final themes = AppTheme(
     ),
   ),
   ovulation: (colors) => ThemeData(
+    primaryColor: colors.primary,
+    accentColor: colors.secondary,
+  ),
+  dark: (colors) => ThemeData(
     primaryColor: colors.primary,
     accentColor: colors.secondary,
   ),

@@ -11,11 +11,13 @@ import 'package:useful_recorder/models/record.dart';
 import 'package:useful_recorder/models/record_repository.dart';
 import 'package:useful_recorder/views/home.dart';
 import 'package:useful_recorder/widgets/calendar.dart';
+import 'package:useful_recorder/widgets/headers.dart';
 import 'package:useful_recorder/widgets/more_list_tile.dart';
 import 'package:useful_recorder/utils/datetime_extension.dart';
 
 // TODO: 将固定时长检查改为按配置时长
 // TODO: 检查优化组件结构，保证重建效率
+// TODO: 删除经期时，只有当日的痛感流量记录清除了，同周期其他日期的记录还在
 
 class RecordView extends StatelessWidget {
   @override
@@ -94,30 +96,7 @@ class RecordView extends StatelessWidget {
             },
           );
         }),
-        Consumer<RecordViewState>(builder: (context, state, child) {
-          return ListTile(
-            title: Text("记录"),
-            dense: true,
-            enabled: false,
-            trailing: TextButton(
-              child: Text("打印"),
-              onPressed: () async {
-                final dbList = await RecordRepository().findAllAsc();
-                log("=== database : ${dbList.length} ===");
-                for (final value in dbList) {
-                  log("${value.date.toDateString()} : ${value.type}");
-                }
-
-                final memoList = state._records;
-                log("=== memory : ${memoList.length} ===");
-                memoList.forEach((key, value) {
-                  // if (value.isMenses)
-                  log("${value.date.toDateString()} : ${value.type}");
-                });
-              },
-            ),
-          );
-        }),
+        SectionHeader("记录"),
         Consumer<RecordViewState>(builder: (context, state, child) {
           final selected = state.selected;
 
@@ -127,10 +106,6 @@ class RecordView extends StatelessWidget {
                   enabled: false,
                 )
               : Column(children: [
-                  // ====================
-                  // == 经期状态切换栏
-                  // == TODO: 统一操作检查逻辑，删除 isXXX 检查方式
-                  // ====================
                   SwitchListTile(
                     title: Builder(builder: (context) {
                       switch (operation(state)) {
@@ -152,7 +127,16 @@ class RecordView extends StatelessWidget {
                     }),
                     value: selected.isMenses,
                     onChanged: (value) {
-                      if (!selected.isMenses) {
+                      if (state.getRecord(selected.date - Duration(days: 1)).type == Type.MensesStart) {
+                        showDialog(
+                          context: context,
+                          builder: (context) {
+                            return AlertDialog(
+                              content: Text("经期至少为两天哦"),
+                            );
+                          },
+                        );
+                      } else if (!selected.isMenses) {
                         if (isMerge(state)) {
                           state.mergeMenses();
                         } else if (isAdd(state)) {

@@ -45,6 +45,7 @@ class ApplicationState extends ChangeNotifier {
   ThemeData _theme;
 
   ThemeData get theme => _theme;
+  ThemeData get darkTheme => themes.dark;
 
   set theme(ThemeData value) {
     _theme = value;

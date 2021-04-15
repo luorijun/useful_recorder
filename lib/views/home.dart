@@ -15,10 +15,6 @@ class HomePage extends StatelessWidget {
   ];
 
   final navs = [
-    // BottomNavigationBarItem(
-    //   icon: Icon(Icons.timelapse),
-    //   label: "首页",
-    // ),
     BottomNavigationBarItem(
       icon: Icon(Icons.calendar_today),
       label: "记录",
