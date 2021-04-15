@@ -1,3 +1,5 @@
+import 'dart:developer';
+
 import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:provider/provider.dart';
@@ -22,6 +24,9 @@ class AnalysisView extends StatelessWidget {
       create: (context) => AnalysisViewState(),
       builder: (context, child) {
         var state = context.watch<AnalysisViewState>();
+        var menses = context.select<AnalysisViewState, Map<Period, Map<int, Record>>>(
+          (state) => state.menses,
+        );
 
         return ListView(children: [
           SectionHeader("统计"),
@@ -69,10 +74,7 @@ class AnalysisView extends StatelessWidget {
                   ],
                 ),
                 child: ExpansionTile(
-                  title: Text(
-                    "开始于 ${period.mensesStartDate.format('-')}",
-                    style: durationTextStyle(),
-                  ),
+                  title: Text("开始于 ${period.mensesStartDate.format('-')}"),
                   subtitle: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
@@ -81,44 +83,86 @@ class AnalysisView extends StatelessWidget {
                       Wrap(
                         spacing: 8,
                         children: [
-                          Chip(
-                            label: Text("进行中"),
-                            backgroundColor: Colors.blue.shade100,
-                          ),
-                          Chip(
-                            label: Text("经期异常"),
-                            backgroundColor: Colors.red.shade100,
-                          ),
-                          Chip(
-                            label: Text("周期异常"),
-                            backgroundColor: Colors.red.shade100,
-                          ),
+                          if (period.processing)
+                            Chip(
+                              label: Text("进行中"),
+                              backgroundColor: Colors.blue.shade100,
+                            ),
+                          if (period.mensesAbnormal)
+                            Chip(
+                              label: Text("经期异常"),
+                              backgroundColor: Colors.red.shade100,
+                            ),
+                          if (period.periodAbnormal)
+                            Chip(
+                              label: Text("周期异常"),
+                              backgroundColor: Colors.red.shade100,
+                            ),
                         ],
                       ),
                     ],
                   ),
                   backgroundColor: Colors.grey.shade50,
                   children: List.generate(period.mensesLength, (index) {
-                    var menses = context.select<AnalysisViewState, Map<Period, Map<int, Record>>>(
-                      (state) => state.menses,
-                    );
+                    if (menses.containsKey(period)) {
+                      var now = period.mensesStartDate + Duration(days: index);
+                      var record = menses[period][now.daySign] ?? Record(now);
 
-                    return menses.containsKey(period)
-                        ? RatingListTile(
-                            title: Text("${period.mensesStartDate.format('-')}"),
-                            icon: FontAwesomeIcons.bolt,
-                            count: 5,
-                            selected: menses[period][(period.mensesStartDate + Duration(days: index)).daySign].pain,
-                            dense: true,
-                            color: Colors.yellow,
-                          )
-                        : RatingListTile(
-                            title: Text("时间"),
-                            icon: FontAwesomeIcons.bolt,
-                            count: 5,
-                            selected: 5,
-                            dense: true,
-                          );
+                      return Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                        decoration: BoxDecoration(border: Border(top: BorderSide(color: Colors.grey.shade200))),
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Text("第 ${index + 1} 天"),
+                            Column(
+                              children: [
+                                Row(
+                                  mainAxisAlignment: MainAxisAlignment.end,
+                                  children: List.generate(5, (index) {
+                                    return Padding(
+                                      padding: const EdgeInsets.all(6),
+                                      child: Icon(
+                                        FontAwesomeIcons.bolt,
+                                        color: index < record.pain ? Colors.yellow : Colors.grey,
+                                      ),
+                                    );
+                                  }),
+                                ),
+                                Row(
+                                  mainAxisAlignment: MainAxisAlignment.end,
+                                  children: List.generate(5, (index) {
+                                    return Padding(
+                                      padding: const EdgeInsets.all(6),
+                                      child: Icon(
+                                        FontAwesomeIcons.tint,
+                                        color: index < record.flow ? Colors.red : Colors.grey,
+                                      ),
+                                    );
+                                  }),
+                                ),
+                              ],
+                            ),
+                          ],
+                        ),
+                      );
+                      // return RatingListTile(
+                      //   title: Text("第 ${index + 1} 天"),
+                      //   icon: FontAwesomeIcons.bolt,
+                      //   count: 5,
+                      //   selected: record.pain,
+                      //   dense: true,
+                      //   color: Colors.yellow,
+                      // );
+                    } else {
+                      return RatingListTile(
+                        title: Text("时间"),
+                        icon: FontAwesomeIcons.bolt,
+                        count: 5,
+                        selected: 5,
+                        dense: true,
+                      );
+                    }
                   }),
                   onExpansionChanged: (expand) {
                     if (expand) state.loadMenses(period);
@@ -214,11 +258,10 @@ class AnalysisViewState extends ChangeNotifier {
 
   loadMenses(Period period) async {
     final result = await period.menses;
-    menses[period] = Map<int, Record>.fromIterable(
-      result,
-      key: (record) => record.date.daySign,
-      value: (record) => record,
-    );
+    menses[period] = {};
+    result.forEach((record) {
+      menses[period][record.date.daySign] = record;
+    });
     notifyListeners();
   }
 }
