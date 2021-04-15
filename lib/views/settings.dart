@@ -50,7 +50,7 @@ class SettingsView extends StatelessWidget {
           ),
           ListTile(
             title: Text("周期长度"),
-            subtitle: Text("当然，保持 28 天是最好的啦！"),
+            subtitle: Text("当然，保持稳定是最好啦！"),
             trailing: loading ? CircularProgressIndicator() : Text("$period"),
             onTap: loading
                 ? null
