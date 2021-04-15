@@ -12,7 +12,6 @@ import 'package:useful_recorder/widgets/headers.dart';
 import 'package:useful_recorder/utils/datetime_extension.dart';
 import 'package:useful_recorder/widgets/more_list_tile.dart';
 
-// TODO: 展示经期每日流量与痛感（可选：可编辑）(目前打开卡片无法加载数据)
 class AnalysisView extends StatelessWidget {
   @override
   Widget build(BuildContext context) {

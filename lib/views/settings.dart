@@ -15,7 +15,6 @@ class SettingsView extends StatelessWidget {
     return ChangeNotifierProvider(
       create: (_) => SettingsViewState(),
       builder: (context, child) {
-        // TODO: 每次都 read 和 select 太丑了，看看有没有更优雅的写法
         var loading = context.select<SettingsViewState, bool>((state) => state.loading);
         var menses = context.select<SettingsViewState, int>((state) => state.menses);
         var period = context.select<SettingsViewState, int>((state) => state.period);
