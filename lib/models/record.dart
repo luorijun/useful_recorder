@@ -1,68 +1,92 @@
-import 'package:useful_recorder/utils/datetime_extension.dart';
+import '../utils/repository.dart';
 
-enum Type {
-  // 持久化时使用
-  MensesStart,
-  MensesEnd,
-  // 内存中使用
-  Menses,
-  Ovulation,
-  OvulationDay,
-  Normal,
+// ==============================
+// region 模型
+// ==============================
+
+enum RecordType {
+  MENSES_START,
+  MENSES_END,
+  NORMAL,
+}
+
+enum RecordEmotion {
+  EXCITED,
+  HAPPY,
+  CALM,
+  SAD,
+  ANGRY,
+  TIRED,
 }
 
 class Record {
-  // 当天日期
-  DateTime date;
+  int? id;
 
-  // 当天类型
-  Type type;
+  DateTime? date;
 
-  // 痛感
-  int pain;
+  RecordType? type;
+  int? pain;
+  int? flow;
+  RecordEmotion? emotion;
 
-  // 流量
-  int flow;
-
-  // 心情
-  int mood;
+  String? note;
+  String? title;
 
   Record(
-    DateTime date, [
-    this.type = Type.Normal,
-    this.pain = 0,
-    this.flow = 0,
-    this.mood = 0,
-  ]) {
-    this.date = DateTime(date.year, date.month, date.day);
+    this.date, {
+    this.type = RecordType.NORMAL,
+    this.pain,
+    this.flow,
+    this.emotion,
+    this.note,
+    this.title,
+  });
+
+  Record.fromMap(map) {
+    date = DateTime.fromMillisecondsSinceEpoch(map['date']);
+    type = map['type'] == -1 ? null : RecordType.values[map['type']];
+    pain = map['pain'];
+    flow = map['flow'];
+    emotion = map['emotion'];
+    note = map['note'];
+    title = map['title'];
   }
 
-  get isEmpty => (type != Type.MensesStart && type != Type.MensesEnd) && pain == 0 && flow == 0 && mood == 0;
-
-  get isMenses => type == Type.MensesStart || type == Type.Menses || type == Type.MensesEnd;
-
-  Record.fromMap(map)
-      : date = DateTimeExtension.fromDaySign(map['date']),
-        type = Type.values[map['type']],
-        pain = map['pain'],
-        flow = map['flow'],
-        mood = map['mood'];
-
-  Map<String, dynamic> toMap() => {
-        'date': date.daySign,
-        'type': type.index,
-        'pain': pain,
-        'flow': flow,
-        'mood': mood,
-      };
+  Map<String, dynamic> toMap() {
+    return {
+      'id': id,
+      'date': date?.millisecondsSinceEpoch,
+      'type': type?.index ?? -1,
+      'pain': pain,
+      'flow': flow,
+      'emotion': emotion?.index,
+      'note': note,
+      'title': title,
+    };
+  }
 
   @override
   String toString() {
     return 'Record{'
+        'id: $id, '
         'date: $date, '
         'type: $type, '
         'pain: $pain, '
         'flow: $flow, '
-        'mood: $mood}';
+        'emotion: $emotion, '
+        'note: $note, '
+        'title: $title}';
   }
 }
+
+// endregion
+
+// ==============================
+// region 数据源
+// ==============================
+
+class RecordRepository extends Repository {
+  RecordRepository() : super(table: "record");
+}
+
+// endregion

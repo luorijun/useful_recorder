@@ -1,60 +1,25 @@
+import 'package:animations/animations.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:animations/animations.dart';
+import 'package:useful_recorder/views/analysis/analysis.dart';
+import 'package:useful_recorder/views/records/records.dart';
+import 'package:useful_recorder/views/settings/settings.dart';
 
-import 'package:useful_recorder/views/record.dart';
-import 'package:useful_recorder/views/analysis.dart';
-import 'package:useful_recorder/views/settings.dart';
-
-// TODO: 标题栏 icon
 class HomePage extends StatelessWidget {
-  final bodies = [
-    RecordView(),
-    AnalysisView(),
-    SettingsView(),
-  ];
-
-  final navs = [
-    BottomNavigationBarItem(
-      icon: Icon(Icons.calendar_today),
-      label: "记录",
-    ),
-    BottomNavigationBarItem(
-      icon: Icon(Icons.analytics),
-      label: "统计",
-    ),
-    BottomNavigationBarItem(
-      icon: Icon(Icons.settings),
-      label: "设置",
-    ),
-  ];
-
   @override
   Widget build(BuildContext context) {
     return ChangeNotifierProvider(
-      create: (context) => HomePageState(
-        title: "首页",
-        page: 0,
-      ),
+      create: (context) => HomePageState([
+        RecordsView(),
+        AnalysisView(),
+        SettingsView(),
+      ]),
       child: Scaffold(
-        appBar: AppBar(
-          title: Selector<HomePageState, String>(
-              selector: (context, state) => state.title,
-              builder: (context, title, child) {
-                return Text(title);
-              }),
-        ),
         body: Builder(builder: (context) {
-          final reverse = context.select<HomePageState, bool>(
-            (state) => state.reverse,
-          );
-
-          final index = context.select<HomePageState, int>(
-            (state) => state.index,
-          );
+          final state = context.watch<HomePageState>();
 
           return PageTransitionSwitcher(
-            reverse: reverse,
+            reverse: state.reverse,
             transitionBuilder: (child, primary, secondary) {
               return SharedAxisTransition(
                 animation: primary,
@@ -63,30 +28,47 @@ class HomePage extends StatelessWidget {
                 child: child,
               );
             },
-            child: bodies[index],
+            child: state.pages[state.index],
           );
         }),
         bottomNavigationBar: Selector<HomePageState, int>(
-            selector: (context, state) => state.index,
-            builder: (context, index, child) {
-              return BottomNavigationBar(
-                type: BottomNavigationBarType.fixed,
-                currentIndex: index,
-                backgroundColor: Colors.white,
-                onTap: (i) => context.read<HomePageState>().index = i,
-                items: navs,
-              );
-            }),
+          selector: (context, state) => state.index,
+          builder: (context, index, child) {
+            return BottomNavigationBar(
+              elevation: 0,
+              type: BottomNavigationBarType.fixed,
+              currentIndex: index,
+              backgroundColor: Colors.white,
+              onTap: (i) => context.read<HomePageState>().index = i,
+              items: [
+                BottomNavigationBarItem(
+                  icon: Icon(Icons.calendar_today),
+                  label: "记录",
+                ),
+                BottomNavigationBarItem(
+                  icon: Icon(Icons.analytics),
+                  label: "统计",
+                ),
+                BottomNavigationBarItem(
+                  icon: Icon(Icons.settings),
+                  label: "设置",
+                ),
+              ],
+            );
+          },
+        ),
       ),
     );
   }
 }
 
 class HomePageState extends ChangeNotifier {
-  // region 索引属性
+  List<Widget> pages;
 
-  int _older;
-  int _newer;
+  late int _older;
+  late int _newer;
+
+  Widget get page => pages[index];
 
   int get index => _newer;
 
@@ -98,24 +80,8 @@ class HomePageState extends ChangeNotifier {
 
   get reverse => _older > _newer;
 
-  // endregion
-
-  // region 标题属性
-
-  String _title;
-
-  String get title => _title;
-
-  set title(String value) {
-    _title = value;
-    notifyListeners();
-  }
-
-  // endregion
-
-  HomePageState({String title, int page}) {
-    this._older = page;
-    this._newer = page;
-    this._title = title;
+  HomePageState(this.pages) {
+    this._older = 0;
+    this._newer = 0;
   }
 }

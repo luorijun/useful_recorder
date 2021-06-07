@@ -12,13 +12,13 @@ class RatingListTile extends StatelessWidget {
   final bool dense;
 
   const RatingListTile({
-    Key key,
-    this.title,
-    this.icon,
-    this.count,
-    this.selected,
-    this.color,
-    this.onRating,
+    Key? key,
+    required this.title,
+    required this.icon,
+    required this.count,
+    required this.selected,
+    required this.color,
+    required this.onRating,
     this.dense = false,
   }) : super(key: key);
 
@@ -38,7 +38,7 @@ class RatingListTile extends StatelessWidget {
             ),
             padding: EdgeInsets.all(4),
             onPressed: () {
-              return onRating?.call(index + 1);
+              return onRating.call(index + 1);
             },
           ),
         ),
@@ -57,12 +57,12 @@ class VoteListTile extends StatelessWidget {
   final VoteEvent onVote;
 
   const VoteListTile({
-    Key key,
-    this.title,
-    this.icons,
-    this.selected,
-    this.color,
-    this.onVote,
+    Key? key,
+    required this.title,
+    required this.icons,
+    required this.selected,
+    required this.color,
+    required this.onVote,
   }) : super(key: key);
 
   @override
@@ -79,7 +79,7 @@ class VoteListTile extends StatelessWidget {
             ),
             color: Colors.grey,
             onPressed: () {
-              onVote?.call(index + 1);
+              onVote.call(index + 1);
             },
           ),
         ),

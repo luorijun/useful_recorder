@@ -7,10 +7,10 @@ class ColorDefinition {
   final Color slight;
 
   ColorDefinition({
-    @required this.primary,
-    @required this.secondary,
-    @required this.weak,
-    @required this.slight,
+    required this.primary,
+    required this.secondary,
+    required this.weak,
+    required this.slight,
   });
 }
 
@@ -22,13 +22,13 @@ class AppTheme {
   final ThemeData ovulation;
   final ThemeData dark;
 
-  AppTheme(
-      {@required AppColor colors,
-      @required ThemeDefinition normal,
-      @required ThemeDefinition menses,
-      @required ThemeDefinition ovulation,
-      @required ThemeDefinition dark})
-      : this.normal = normal.call(colors.normal),
+  AppTheme({
+    required AppColor colors,
+    required ThemeDefinition normal,
+    required ThemeDefinition menses,
+    required ThemeDefinition ovulation,
+    required ThemeDefinition dark,
+  })   : this.normal = normal.call(colors.normal),
         this.menses = menses.call(colors.menses),
         this.ovulation = ovulation.call(colors.ovulation),
         this.dark = dark.call(colors.dark);
@@ -40,7 +40,12 @@ class AppColor {
   final ColorDefinition ovulation;
   final ColorDefinition dark;
 
-  AppColor({@required this.normal, @required this.menses, @required this.ovulation, @required this.dark});
+  AppColor({
+    required this.normal,
+    required this.menses,
+    required this.ovulation,
+    required this.dark,
+  });
 }
 
 final colors = AppColor(

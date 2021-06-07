@@ -1,34 +1,130 @@
 extension DateTimeExtension on DateTime {
+  // ==============================
+  // region 断言日期
+  // ==============================
+
+  bool get isFuture => isAfter(DateTime.now());
+
+  bool get isPast => isBefore(DateTime.now());
+
   bool sameDay(DateTime date) => this.sameMonth(date) && day == date.day;
 
   bool sameMonth(DateTime date) => this.sameYear(date) && month == date.month;
 
   bool sameYear(DateTime date) => year == date.year;
 
-  int get daySign => this.year * 10000 + this.month * 100 + this.day;
+  // endregion
 
-  static DateTime fromDaySign(int sign) {
-    final int year = (sign / 10000).floor();
-    final int month = ((sign % 10000) / 100).floor();
-    final int day = sign % 10000 % 100;
-    return DateTime(year, month, day);
+  // ==============================
+  // region 判断时间
+  // ==============================
+
+  int compareYear(DateTime date) {
+    final result = DateTime(year).compareTo(DateTime(date.year));
+    if (result > 0) return 1;
+    if (result < 0) return -1;
+    return 0;
   }
 
-  DateTime get date => DateTime(year, month, day);
+  int compareMonth(DateTime date) {
+    final result = DateTime(year, month).compareTo(DateTime(date.year, date.month));
+    if (result > 0) return 1;
+    if (result < 0) return -1;
+    return 0;
+  }
 
-  DateTime get time => DateTime(0, 0, 0, hour, minute, second, millisecond, microsecond);
+  int compareDay(DateTime date) {
+    final result = DateTime(year, month, day).compareTo(DateTime(date.year, date.month, date.day));
+    if (result > 0) return 1;
+    if (result < 0) return -1;
+    return 0;
+  }
 
-  bool get isFuture => isAfter(DateTime.now());
+  // endregion
+
+  // ==============================
+  // region 统计日期
+  // ==============================
+
+  int get daysOfMonth => toMonth.nextMonth().difference(toMonth).inDays;
+
+  int get daysOfYear => toYear.nextYear().difference(toYear).inDays;
+
+  // endregion
+
+  // ==============================
+  // region 获取绝对日期
+  // ==============================
+
+  DateTime get today => DateTime(year, month, day);
+
+  DateTime get toMonth => DateTime(year, month, 1);
+
+  DateTime get toYear => DateTime(year, 1, 1);
+
+  // endregion
+
+  // ==============================
+  // region 计算相对日期
+  // ==============================
+
+  DateTime prevDay() => this - 1.day;
+
+  DateTime nextDay() => this + 1.day;
+
+  DateTime prevWeek() => this - 7.day;
+
+  DateTime nextWeek() => this + 7.day;
+
+  DateTime prevMonth() => DateTime(
+        year,
+        month - 1,
+        day,
+        hour,
+        minute,
+        second,
+        millisecond,
+        microsecond,
+      );
+
+  DateTime nextMonth() => DateTime(
+        year,
+        month + 1,
+        day,
+        hour,
+        minute,
+        second,
+        millisecond,
+        microsecond,
+      );
+
+  DateTime prevYear() => DateTime(
+        year - 1,
+        month,
+        day,
+        hour,
+        minute,
+        second,
+        millisecond,
+        microsecond,
+      );
+
+  DateTime nextYear() => DateTime(
+        year + 1,
+        month,
+        day,
+        hour,
+        minute,
+        second,
+        millisecond,
+        microsecond,
+      );
+
+  // endregion
 
   DateTime operator +(Duration duration) => add(duration);
 
   DateTime operator -(Duration duration) => subtract(duration);
-
-  // Duration operator -(DateTime datetime) => difference(datetime);
-
-  String toDateString() {
-    return "$year 年 $month 月 $day 日";
-  }
 
   String format(String divider) {
     return "$year$divider$month$divider$day";
