@@ -1,10 +1,8 @@
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:useful_recorder/constants.dart';
 import 'package:useful_recorder/views/home.dart';
-import 'package:wakelock/wakelock.dart';
 
 void main() {
   runApp(UsefulRecorderApp());
@@ -28,9 +26,9 @@ class UsefulRecorderApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     // 开发模式下保持屏幕常亮
-    if (kDebugMode) {
-      Wakelock.enable();
-    }
+    // if (kDebugMode) {
+    //   Wakelock.enable();
+    // }
 
     // 状态栏置为透明色
     SystemChrome.setSystemUIOverlayStyle(SystemUiOverlayStyle(
@@ -47,6 +45,7 @@ class UsefulRecorderApp extends StatelessWidget {
           primaryContainer: Color(0xfffbd0db),
           // hsl(0, 0%, 90%)
           secondary: Color(0xffe6e6e6),
+          tertiary: Color(0xffcccccc),
           // hsl(0, 0%, 98%)
           background: Color(0xfffafafa),
         ),

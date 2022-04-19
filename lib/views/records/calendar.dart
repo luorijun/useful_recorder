@@ -44,11 +44,11 @@ class Calendar extends StatelessWidget {
     final theme = Theme.of(context);
 
     // 计算组件高度
-    final height = MediaQuery.of(context).size.width / 7 * 6;
+    final width = MediaQuery.of(context).size.width;
     return ChangeNotifierProvider(
       create: (BuildContext context) => CalendarState(
+        viewWidth: width,
         page: initDate,
-        pageHeight: 0,
       ),
       child: Column(
         mainAxisSize: MainAxisSize.min,
@@ -63,9 +63,9 @@ class Calendar extends StatelessWidget {
                 Padding(
                   padding: const EdgeInsets.only(left: 16),
                   child: Builder(builder: (context) {
-                    final page = context.select<CalendarState, DateTime>((state) => state.page);
+                    final month = context.select<CalendarState, DateTime>((state) => state.month);
                     return Text(
-                      "${page.year} 年 ${page.month} 月",
+                      "${month.year} 年 ${month.month} 月",
                       style: theme.textTheme.headline5,
                     );
                   }),
@@ -77,14 +77,28 @@ class Calendar extends StatelessWidget {
                     width: 56,
                     height: 28,
                     margin: EdgeInsets.only(right: 8),
-                    child: ElevatedButton(
-                      child: Text("今天"),
-                      style: ButtonStyle(
-                        elevation: MaterialStateProperty.all(0),
-                        padding: MaterialStateProperty.all(EdgeInsets.zero),
-                      ),
-                      onPressed: () {},
-                    ),
+                    child: Builder(builder: (context) {
+                      final state = context.read<CalendarState>();
+                      return ElevatedButton(
+                        child: Text("今天"),
+                        style: ButtonStyle(
+                          elevation: MaterialStateProperty.all(0),
+                          padding: MaterialStateProperty.all(EdgeInsets.zero),
+                        ),
+                        onPressed: () {
+                          final from = state.monthToOffset(state.month);
+                          final to = state.monthToOffset(DateTime.now().toMonth);
+                          final length = (from - to).abs();
+                          length < 5
+                              ? state.monthViewController.animateToPage(
+                                  to,
+                                  duration: Duration(milliseconds: length * 500),
+                                  curve: Curves.fastOutSlowIn,
+                                )
+                              : state.monthViewController.jumpToPage(to);
+                        },
+                      );
+                    }),
                   ),
                   Padding(
                     padding: EdgeInsets.only(right: 16),
@@ -143,28 +157,18 @@ class Calendar extends StatelessWidget {
                   break;
                 // 日视图
                 case CalendarMode.DATE:
-
-                  /// 日视图允许的最小日期
-                  final DateTime _minMonth = DateTime(1900, 1, 1);
-                  final List<String> _title = const ["周日", "周一", "周二", "周三", "周四", "周五", "周六"];
-
-                  // 计算从最小月份到现在偏移
-                  var offset = (initDate.year - _minMonth.year) * 12;
-                  offset += initDate.month - _minMonth.month;
-
-                  // 绘制日视图，五百年内分页滑动
                   view = Builder(builder: (context) {
                     final state = context.read<CalendarState>();
-                    final pageHeight = context.select<CalendarState, double>((state) => state.pageHeight);
+                    final pageHeight = context.select<CalendarState, double>((state) => state.containerHeight);
 
                     return AnimatedContainer(
                       height: pageHeight,
                       duration: Duration(milliseconds: 200),
                       child: PageView.builder(
                         itemCount: 6000,
-                        controller: PageController(initialPage: offset),
+                        controller: state.monthViewController,
                         itemBuilder: (context, offset) {
-                          final month = DateTime(_minMonth.year, _minMonth.month + offset, 1);
+                          final month = DateTime(state._minMonth.year, state._minMonth.month + offset, 1);
 
                           // 计算元素数量
                           final days = month.daysOfMonth + (month.weekday % 7);
@@ -186,7 +190,7 @@ class Calendar extends StatelessWidget {
                                 return Container(
                                   alignment: Alignment.center,
                                   child: Text(
-                                    _title[index],
+                                    state._title[index],
                                     style: theme.textTheme.caption,
                                   ),
                                 );
@@ -221,16 +225,8 @@ class Calendar extends StatelessWidget {
                           );
                         },
                         onPageChanged: (offset) {
-                          final month = DateTime(_minMonth.year, _minMonth.month + offset, 1);
-                          final days = month.daysOfMonth + (month.weekday % 7);
-                          final itemCount = days + ((7 - days % 7) % 7) + 7;
-                          final lines = itemCount / 7;
-                          final height = MediaQuery.of(context).size.width / 7 * lines;
-                          state.pageHeight = height;
-                          state.page = month;
-                          if (onChangePage != null) {
-                            onChangePage!(month);
-                          }
+                          final month = state.offsetToMonth(offset);
+                          state.month = month;
                         },
                       ),
                     );
@@ -267,42 +263,56 @@ class Calendar extends StatelessWidget {
 
 class CalendarState extends ChangeNotifier {
   CalendarState({
+    required double viewWidth,
     required DateTime page,
-    required double pageHeight,
-  }) {
-    this._page = page;
-    this._pageHeight = pageHeight;
+  }) : this._viewWidth = viewWidth {
+    // 初始化为日视图
     this._mode = CalendarMode.DATE;
+    this._month = page;
+    this._containerHeight = calcHeightByMonth();
+
+    // 计算从最小月份到现在偏移
+    this.monthViewController = PageController(
+      initialPage: monthToOffset(page),
+    );
   }
 
-  late DateTime _page;
-  late double _pageHeight;
+  // 仅用于计算视图大小
+  final double _viewWidth;
+  final DateTime _minMonth = DateTime(1900, 1, 1);
+  final List<String> _title = const ["周日", "周一", "周二", "周三", "周四", "周五", "周六"];
+
+  late double _containerHeight;
   late CalendarMode _mode;
 
-  DateTime get page {
-    return _page;
-  }
+  late DateTime _month;
+  late PageController monthViewController;
 
-  set page(DateTime value) {
-    _page = value;
-    notifyListeners();
-  }
-
-  double get pageHeight {
-    return _pageHeight;
-  }
-
-  set pageHeight(double value) {
-    _pageHeight = value;
-    notifyListeners();
-  }
-
-  CalendarMode get mode {
-    return _mode;
-  }
+  CalendarMode get mode => _mode;
 
   set mode(CalendarMode mode) {
     _mode = mode;
     notifyListeners();
+  }
+
+  DateTime get month => _month;
+
+  set month(DateTime value) {
+    _month = value;
+    _containerHeight = calcHeightByMonth();
+    notifyListeners();
+  }
+
+  double get containerHeight => _containerHeight;
+
+  DateTime offsetToMonth(int offset) => DateTime(_minMonth.year, _minMonth.month + offset, 1);
+
+  int monthToOffset(DateTime month) => (month.year - _minMonth.year) * 12 + month.month - _minMonth.month;
+
+  double calcHeightByMonth() {
+    final days = _month.daysOfMonth + (_month.weekday % 7);
+    final itemCount = days + ((7 - days % 7) % 7) + 7;
+    final lines = itemCount / 7;
+    return _viewWidth / 7 * lines;
   }
 }

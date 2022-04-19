@@ -8,6 +8,8 @@ import 'package:useful_recorder/views/settings/settings.dart';
 class HomePage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+
     return ChangeNotifierProvider(
       create: (context) => HomePageState([
         RecordsView(),
@@ -31,10 +33,10 @@ class HomePage extends StatelessWidget {
             child: state.pages[state.index],
           );
         }),
-        bottomNavigationBar: Selector<HomePageState, int>(
-          selector: (context, state) => state.index,
-          builder: (context, index, child) {
-            return BottomNavigationBar(
+        bottomNavigationBar: Builder(builder: (context) {
+          final index = context.select<HomePageState, int>((state) => state.index);
+          return Container(
+            child: BottomNavigationBar(
               elevation: 0,
               type: BottomNavigationBarType.fixed,
               currentIndex: index,
@@ -54,9 +56,17 @@ class HomePage extends StatelessWidget {
                   label: "设置",
                 ),
               ],
-            );
-          },
-        ),
+            ),
+            decoration: BoxDecoration(
+              border: Border(
+                top: BorderSide(
+                  width: .25,
+                  color: theme.colorScheme.tertiary,
+                ),
+              ),
+            ),
+          );
+        }),
       ),
     );
   }
