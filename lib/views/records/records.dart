@@ -18,15 +18,16 @@ class RecordsView extends StatelessWidget {
       child: Column(children: [
         // 标题栏
         Container(
-          height: top + 128,
+          height: top + 56,
           color: theme.primaryColor,
         ),
 
-        // 日历
+        // 页面正文
         Expanded(
-          child: SingleChildScrollView(
-            child: Column(children: [
-              Calendar(
+          child: Column(children: [
+            // 日历
+            SingleChildScrollView(
+              child: Calendar(
                 dateBuilder: (context, day, month) {
                   if (!day.sameMonth(month)) {
                     return Container();
@@ -94,11 +95,11 @@ class RecordsView extends StatelessWidget {
                   });
                 },
               ),
+            ),
 
-              // 数据检视
-              Inspector(),
-            ]),
-          ),
+            // 数据检视
+            Flexible(child: Inspector()),
+          ]),
         )
       ]),
     );
@@ -108,14 +109,25 @@ class RecordsView extends StatelessWidget {
 class RecordsViewState extends ChangeNotifier {
   RecordsViewState();
 
+  CalendarMode _mode = CalendarMode.DATE;
   DateTime _selectedDate = DateTime.now();
 
-  DateTime get selectedDate {
-    return _selectedDate;
-  }
+  DateTime get selectedDate => _selectedDate;
 
   set selectedDate(DateTime date) {
     this._selectedDate = date;
     notifyListeners();
   }
+
+  CalendarMode get mode => _mode;
+  set mode(CalendarMode mode) {
+    _mode = mode;
+    notifyListeners();
+  }
+}
+
+enum CalendarMode {
+  YEAR,
+  MONTH,
+  DATE,
 }

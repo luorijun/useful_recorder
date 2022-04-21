@@ -1,14 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:useful_recorder/utils/datetime_extension.dart';
+import 'package:useful_recorder/views/records/records.dart';
 
-enum CalendarMode {
-  YEAR,
-  MONTH,
-  DATE,
-}
-
-typedef void CalendarModeEvent(CalendarMode mode);
 typedef void DateTimeEvent(DateTime date);
 typedef Widget DateWidgetBuilder(BuildContext context, DateTime day, DateTime month);
 
@@ -103,8 +97,8 @@ class Calendar extends StatelessWidget {
                   Padding(
                     padding: EdgeInsets.only(right: 16),
                     child: Builder(builder: (context) {
-                      final state = context.read<CalendarState>();
-                      final viewMode = context.select<CalendarState, CalendarMode>((state) => state.mode);
+                      final state = context.read<RecordsViewState>();
+                      final viewMode = context.select<RecordsViewState, CalendarMode>((state) => state.mode);
 
                       final modes = [
                         CalendarMode.YEAR,
@@ -142,7 +136,7 @@ class Calendar extends StatelessWidget {
           // 日历视图
           Container(
             child: Builder(builder: (context) {
-              final viewMode = context.select<CalendarState, CalendarMode>((state) => state.mode);
+              final viewMode = context.select<RecordsViewState, CalendarMode>((state) => state.mode);
 
               var view;
               // region switch
@@ -267,7 +261,6 @@ class CalendarState extends ChangeNotifier {
     required DateTime page,
   }) : this._viewWidth = viewWidth {
     // 初始化为日视图
-    this._mode = CalendarMode.DATE;
     this._month = page;
     this._containerHeight = calcHeightByMonth();
 
@@ -283,17 +276,9 @@ class CalendarState extends ChangeNotifier {
   final List<String> _title = const ["周日", "周一", "周二", "周三", "周四", "周五", "周六"];
 
   late double _containerHeight;
-  late CalendarMode _mode;
 
   late DateTime _month;
   late PageController monthViewController;
-
-  CalendarMode get mode => _mode;
-
-  set mode(CalendarMode mode) {
-    _mode = mode;
-    notifyListeners();
-  }
 
   DateTime get month => _month;
 

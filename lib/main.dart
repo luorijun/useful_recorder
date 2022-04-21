@@ -43,11 +43,12 @@ class UsefulRecorderApp extends StatelessWidget {
           primary: Color(0xfff589a4),
           // hsl(345, 85%, 90%)
           primaryContainer: Color(0xfffbd0db),
-          // hsl(0, 0%, 90%)
           secondary: Color(0xffe6e6e6),
           tertiary: Color(0xffcccccc),
+          // hsl(0, 0%, 90%)
+          tertiaryContainer: Color(0xffe6e6e6),
           // hsl(0, 0%, 98%)
-          background: Color(0xfffafafa),
+          background: Color(0xfff7f7f7),
         ),
         // textTheme: TextTheme(
         //   bodyText1: TextStyle(

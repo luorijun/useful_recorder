@@ -12,6 +12,41 @@ class Inspector extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return SectionHeader("记录");
+    return Column(
+      children: [
+        SectionHeader("记录"),
+        Expanded(
+          child: ListView(
+            padding: EdgeInsets.symmetric(horizontal: 16),
+            children: [
+              Container(
+                margin: EdgeInsets.only(bottom: 16),
+                height: 128,
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(6),
+                  color: Colors.white,
+                ),
+              ),
+              Container(
+                margin: EdgeInsets.only(bottom: 16),
+                height: 128,
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(6),
+                  color: Colors.white,
+                ),
+              ),
+              Container(
+                margin: EdgeInsets.only(bottom: 16),
+                height: 128,
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(6),
+                  color: Colors.white,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ],
+    );
   }
 }
