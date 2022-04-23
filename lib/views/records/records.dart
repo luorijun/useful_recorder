@@ -100,7 +100,7 @@ class RecordsView extends StatelessWidget {
             // 数据检视
             Flexible(child: Inspector()),
           ]),
-        )
+        ),
       ]),
     );
   }
@@ -120,9 +120,43 @@ class RecordsViewState extends ChangeNotifier {
   }
 
   CalendarMode get mode => _mode;
+
   set mode(CalendarMode mode) {
     _mode = mode;
     notifyListeners();
+  }
+
+  ///
+  /// _ o _
+  /// { o _
+  /// } o _
+  /// _ o {
+  /// } o {
+  /// { o }
+  DateMode getDateMode(DateTime date) {
+    // 查询之后最近一次经期
+
+    // 如果之后是经期结束，则直接返回经期
+
+    // 如果之后是经期开始。则根据日期推算当前是否为排卵期
+
+    // 如果之后没有记录（否则），则查询之前最近一次经期
+
+    // 如果之前是经期开始，并且当天不是未来日期，则直接返回经期
+
+    // 如果之前是经期结束，或者当天是未来日期（否则），则开始预测
+
+    // 计算当日在周期中所属的天数
+
+    // 如果是排卵日，则返回排卵日
+
+    // 如果是排卵期，则返回排卵期
+
+    // 如果是经期，则返回经期
+
+    // 其他情况（默认）返回正常日期
+
+    return DateMode.NORMAL;
   }
 }
 
@@ -130,4 +164,11 @@ enum CalendarMode {
   YEAR,
   MONTH,
   DATE,
+}
+
+enum DateMode {
+  MENSES,
+  OVULATION,
+  SENSITIVE,
+  NORMAL,
 }
