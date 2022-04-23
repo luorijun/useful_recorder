@@ -35,6 +35,11 @@ class UsefulRecorderApp extends StatelessWidget {
       statusBarColor: Colors.transparent,
     ));
 
+    SystemChrome.setPreferredOrientations([
+      DeviceOrientation.portraitUp,
+      DeviceOrientation.portraitDown,
+    ]);
+
     return MaterialApp(
       title: "Useful Recorder",
       theme: ThemeData.from(
