@@ -16,11 +16,11 @@ class HomePage extends StatelessWidget {
         AnalysisView(),
         SettingsView(),
       ]),
-      child: Builder(builder: (context) {
-        final state = context.read<HomePageState>();
-        final index = context.select<HomePageState, int>((state) => state.index);
-        return Scaffold(
-          body: PageTransitionSwitcher(
+      child: Scaffold(
+        body: Builder(builder: (context) {
+          final state = context.read<HomePageState>();
+          final page = context.select<HomePageState, Widget>((state) => state.page);
+          return PageTransitionSwitcher(
             reverse: state.reverse,
             transitionBuilder: (child, primary, secondary) {
               return SharedAxisTransition(
@@ -30,15 +30,19 @@ class HomePage extends StatelessWidget {
                 child: child,
               );
             },
-            child: state.pages[state.index],
-          ),
-          bottomNavigationBar: Container(
+            child: page,
+          );
+        }),
+        bottomNavigationBar: Builder(builder: (context) {
+          final state = context.read<HomePageState>();
+          final index = context.select<HomePageState, int>((state) => state.index);
+          return Container(
             child: BottomNavigationBar(
               elevation: 0,
               type: BottomNavigationBarType.fixed,
               currentIndex: index,
               backgroundColor: Colors.white,
-              onTap: (i) => context.read<HomePageState>().index = i,
+              onTap: (i) => state.index = i,
               items: [
                 BottomNavigationBarItem(
                   icon: Icon(Icons.calendar_today),
@@ -62,71 +66,9 @@ class HomePage extends StatelessWidget {
                 ),
               ),
             ),
-          ),
-          floatingActionButton: index == 0
-              ? Container(
-                  child: Builder(builder: (context) {
-                    return FloatingActionButton.extended(
-                      elevation: 0,
-                      icon: Icon(Icons.add),
-                      label: Text('新增记录'),
-                      backgroundColor: Colors.white,
-                      onPressed: () {
-                        showModalBottomSheet(
-                            context: context,
-                            backgroundColor: Colors.transparent,
-                            elevation: 0,
-                            builder: (context) {
-                              return Container(
-                                margin: EdgeInsets.all(16),
-                                padding: EdgeInsets.all(8),
-                                height: 300,
-                                child: Align(
-                                  alignment: Alignment.bottomRight,
-                                  child: Row(
-                                    mainAxisAlignment: MainAxisAlignment.end,
-                                    crossAxisAlignment: CrossAxisAlignment.end,
-                                    children: [
-                                      TextButton(
-                                        child: Text("关闭"),
-                                        onPressed: () {
-                                          Navigator.pop(context);
-                                        },
-                                        style: ButtonStyle(),
-                                      ),
-                                      ElevatedButton(
-                                        child: Text("保存"),
-                                        onPressed: () {
-                                          Navigator.pop(context);
-                                        },
-                                        style: ButtonStyle(
-                                          elevation: MaterialStateProperty.all(0),
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                                decoration: BoxDecoration(
-                                  color: Colors.white,
-                                  border: Border.all(width: .25, color: theme.colorScheme.tertiary),
-                                  borderRadius: BorderRadius.circular(16),
-                                ),
-                              );
-                            });
-                      },
-                    );
-                  }),
-                  decoration: BoxDecoration(
-                    border: Border.all(
-                      width: .35,
-                      color: theme.colorScheme.tertiary,
-                    ),
-                    borderRadius: BorderRadius.circular(32),
-                  ),
-                )
-              : null,
-        );
-      }),
+          );
+        }),
+      ),
     );
   }
 }
