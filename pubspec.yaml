@@ -19,7 +19,7 @@ dependencies:
 
   # 界面
   animations: any
-  #  font_awesome_flutter: any
+  font_awesome_flutter: any
   #  flutter_material_pickers: any
   #  carousel_slider: ^4.0.0
 

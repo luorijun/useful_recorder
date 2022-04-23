@@ -3,42 +3,47 @@ import 'package:flutter/material.dart';
 typedef RatingEvent(int index);
 
 class RatingListTile extends StatelessWidget {
-  final Widget title;
-  final IconData icon;
-  final int count;
-  final int selected;
-  final Color color;
-  final RatingEvent onRating;
-  final bool dense;
-
   const RatingListTile({
     Key? key,
     required this.title,
     required this.icon,
-    required this.count,
-    required this.selected,
-    required this.color,
-    required this.onRating,
+    required this.max,
+    this.score = 0,
+    this.color,
+    this.onRating,
     this.dense = false,
   }) : super(key: key);
 
+  final Widget title;
+  final IconData icon;
+  final int max;
+  final int score;
+  final Color? color;
+  final RatingEvent? onRating;
+  final bool dense;
+
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+
     return ListTile(
       title: title,
       dense: dense,
       trailing: Wrap(
         children: List.generate(
-          count,
+          max,
           (index) => IconButton(
             icon: Icon(
               icon,
-              color: index < selected ? color : Colors.grey,
-              size: dense ? 20 : 24,
+              color: index < score
+                  ? color != null
+                      ? color
+                      : theme.colorScheme.primary
+                  : theme.colorScheme.tertiary,
+              size: 24,
             ),
-            padding: EdgeInsets.all(4),
             onPressed: () {
-              return onRating.call(index + 1);
+              return onRating?.call(index + 1);
             },
           ),
         ),
@@ -50,23 +55,25 @@ class RatingListTile extends StatelessWidget {
 typedef VoteEvent(int index);
 
 class VoteListTile extends StatelessWidget {
-  final Widget title;
-  final List<IconData> icons;
-  final int selected;
-  final Color color;
-  final VoteEvent onVote;
-
   const VoteListTile({
     Key? key,
     required this.title,
     required this.icons,
-    required this.selected,
-    required this.color,
-    required this.onVote,
+    this.selected = 0,
+    this.color,
+    this.onVote,
   }) : super(key: key);
+
+  final Widget title;
+  final List<IconData> icons;
+  final int selected;
+  final Color? color;
+  final VoteEvent? onVote;
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+
     return ListTile(
       title: title,
       trailing: Wrap(
@@ -75,11 +82,15 @@ class VoteListTile extends StatelessWidget {
           (index) => IconButton(
             icon: Icon(
               icons[index],
-              color: selected == index + 1 ? color : Colors.grey,
+              color: selected == index + 1
+                  ? color != null
+                      ? color
+                      : theme.colorScheme.primary
+                  : theme.colorScheme.tertiary,
+              size: 24,
             ),
-            color: Colors.grey,
             onPressed: () {
-              onVote.call(index + 1);
+              onVote?.call(index + 1);
             },
           ),
         ),

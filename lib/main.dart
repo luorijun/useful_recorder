@@ -55,16 +55,10 @@ class UsefulRecorderApp extends StatelessWidget {
           // hsl(0, 0%, 98%)
           background: Color(0xfff7f7f7),
         ),
-        // textTheme: TextTheme(
-        //   bodyText1: TextStyle(
-        //     fontSize: 12,
-        //     color: Color(0xff999999),
-        //   ),
-        //   bodyText2: TextStyle(
-        //     fontSize: 14,
-        //     color: Color(0xff333333),
-        //   ),
-        // ),
+        textTheme: TextTheme(
+            caption: TextStyle(
+          color: Color(0xff999999),
+        )),
       ),
       home: FutureBuilder(
         future: initOnFirstRun(),
