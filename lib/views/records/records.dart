@@ -45,9 +45,7 @@ class RecordsView extends StatelessWidget {
                           child: Column(
                             mainAxisAlignment: MainAxisAlignment.center,
                             children: [
-                              Text(
-                                "${day.day}",
-                              ),
+                              Text("${day.day}"),
                               // Row(
                               //   mainAxisAlignment: MainAxisAlignment.center,
                               //   children: [

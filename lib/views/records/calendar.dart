@@ -37,8 +37,8 @@ class Calendar extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
 
-    // 计算组件高度
-    final width = MediaQuery.of(context).size.width;
+    // 计算组件高度，减去两边边距
+    final width = MediaQuery.of(context).size.width - 16;
     return ChangeNotifierProvider(
       create: (BuildContext context) => CalendarState(
         viewWidth: width,
@@ -151,80 +151,87 @@ class Calendar extends StatelessWidget {
                   break;
                 // 日视图
                 case CalendarMode.DATE:
-                  view = Builder(builder: (context) {
-                    final state = context.read<CalendarState>();
-                    final pageHeight = context.select<CalendarState, double>((state) => state.containerHeight);
-
-                    return AnimatedContainer(
-                      height: pageHeight,
-                      duration: Duration(milliseconds: 200),
-                      child: PageView.builder(
-                        itemCount: 6000,
-                        controller: state.monthViewController,
-                        itemBuilder: (context, offset) {
-                          final month = DateTime(state._minMonth.year, state._minMonth.month + offset, 1);
-
-                          // 计算元素数量
-                          final days = month.daysOfMonth + (month.weekday % 7);
-                          final itemCount = days + ((7 - days % 7) % 7) + 7;
-
-                          // 绘制当前页的月网格
-                          return GridView.builder(
-                            padding: EdgeInsets.zero,
-                            physics: NeverScrollableScrollPhysics(),
-                            shrinkWrap: true,
-                            itemCount: itemCount,
-                            gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                              crossAxisCount: 7,
-                              childAspectRatio: 1,
-                            ),
-                            itemBuilder: (context, index) {
-                              // 绘制标题
-                              if (index < 7) {
-                                return Container(
-                                  alignment: Alignment.center,
-                                  child: Text(
-                                    state._title[index],
-                                    style: theme.textTheme.caption,
-                                  ),
-                                );
-                              }
-
-                              // 绘制日期
-                              var day = month.add(Duration(days: index - 7 - (month.weekday % 7)));
-
-                              if (dateBuilder != null) {
-                                return dateBuilder!(context, day, month);
-                              }
-
-                              if (day.sameMonth(month)) {
-                                return GestureDetector(
-                                  behavior: HitTestBehavior.translucent,
-                                  child: Container(
-                                    margin: EdgeInsets.all(4),
-                                    alignment: Alignment.center,
-                                    child: Text(
-                                      "${day.day}",
-                                      style: TextStyle(
-                                        color: day.isFuture ? Colors.black26 : Colors.black87,
-                                      ),
-                                    ),
-                                  ),
-                                  onTap: () => onSelectDate?.call(day),
-                                );
-                              } else {
-                                return Container();
-                              }
-                            },
-                          );
-                        },
-                        onPageChanged: (offset) {
-                          final month = state.offsetToMonth(offset);
-                          state.month = month;
-                        },
+                  view = Column(
+                    children: [
+                      // 标题
+                      Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 8),
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceAround,
+                          children: ["周日", "周一", "周二", "周三", "周四", "周五", "周六"].map((e) {
+                            return Text(e, style: theme.textTheme.caption);
+                          }).toList(growable: false),
+                        ),
                       ),
-                    );
-                  });
+
+                      // 内容网格
+                      Builder(builder: (context) {
+                        final state = context.read<CalendarState>();
+                        final pageHeight = context.select<CalendarState, double>((state) => state.containerHeight);
+
+                        return AnimatedContainer(
+                          height: pageHeight,
+                          duration: Duration(milliseconds: 200),
+                          child: PageView.builder(
+                            itemCount: 6000,
+                            controller: state.monthViewController,
+                            itemBuilder: (context, offset) {
+                              final month = DateTime(state._minMonth.year, state._minMonth.month + offset, 1);
+
+                              // 计算元素数量
+                              final days = month.daysOfMonth + (month.weekday % 7);
+                              final itemCount = days + ((7 - days % 7) % 7);
+
+                              // 绘制当前页的月网格
+                              return Padding(
+                                padding: const EdgeInsets.symmetric(horizontal: 8),
+                                child: GridView.builder(
+                                  padding: EdgeInsets.zero,
+                                  physics: NeverScrollableScrollPhysics(),
+                                  shrinkWrap: true,
+                                  itemCount: itemCount,
+                                  gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                                    crossAxisCount: 7,
+                                    childAspectRatio: 1,
+                                  ),
+                                  itemBuilder: (context, index) {
+                                    var day = month.add(Duration(days: index - (month.weekday % 7)));
+
+                                    if (dateBuilder != null) {
+                                      return dateBuilder!(context, day, month);
+                                    }
+
+                                    if (day.sameMonth(month)) {
+                                      return GestureDetector(
+                                        behavior: HitTestBehavior.translucent,
+                                        child: Container(
+                                          margin: EdgeInsets.all(4),
+                                          alignment: Alignment.center,
+                                          child: Text(
+                                            "${day.day}",
+                                            style: TextStyle(
+                                              color: day.isFuture ? Colors.black26 : Colors.black87,
+                                            ),
+                                          ),
+                                        ),
+                                        onTap: () => onSelectDate?.call(day),
+                                      );
+                                    } else {
+                                      return Container();
+                                    }
+                                  },
+                                ),
+                              );
+                            },
+                            onPageChanged: (offset) {
+                              final month = state.offsetToMonth(offset);
+                              state.month = month;
+                            },
+                          ),
+                        );
+                      }),
+                    ],
+                  );
                   break;
               }
               // endregion
@@ -261,7 +268,7 @@ class CalendarState extends ChangeNotifier {
     required DateTime page,
   }) : this._viewWidth = viewWidth {
     // 初始化为日视图
-    this._month = page;
+    this._month = page.toMonth;
     this._containerHeight = calcHeightByMonth();
 
     // 计算从最小月份到现在偏移
@@ -273,7 +280,6 @@ class CalendarState extends ChangeNotifier {
   // 仅用于计算视图大小
   final double _viewWidth;
   final DateTime _minMonth = DateTime(1900, 1, 1);
-  final List<String> _title = const ["周日", "周一", "周二", "周三", "周四", "周五", "周六"];
 
   late double _containerHeight;
 
@@ -296,7 +302,7 @@ class CalendarState extends ChangeNotifier {
 
   double calcHeightByMonth() {
     final days = _month.daysOfMonth + (_month.weekday % 7);
-    final itemCount = days + ((7 - days % 7) % 7) + 7;
+    final itemCount = days + ((7 - days % 7) % 7);
     final lines = itemCount / 7;
     return _viewWidth / 7 * lines;
   }
