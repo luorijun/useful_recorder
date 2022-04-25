@@ -37,6 +37,31 @@ final onUpgrade = (Database db, int oldVersion, int newVersion) {
 
 // endregion
 
+class Connection {
+  Connection._();
+
+  static final _instance = Connection._();
+
+  factory Connection() {
+    return _instance;
+  }
+
+  Future<Database>? _db;
+
+  Future<Database> get db async {
+    if (_db == null) {
+      final path = await getDatabasesPath();
+      _db = openDatabase(
+        "$path/root",
+        version: version,
+        onCreate: onCreate,
+        onUpgrade: onUpgrade,
+      );
+    }
+    return _db!;
+  }
+}
+
 abstract class Repository {
   Repository({
     required this.table,
@@ -84,22 +109,29 @@ abstract class Repository {
         final key = entry.key;
         final value = entry.value;
         switch (value.operator) {
-          case Operator.equal:
+          case Operator.EQ:
             return '$key = ?';
-          case Operator.like:
+          case Operator.LIKE:
             return '$key like ?';
-          case Operator.notEqual:
+          case Operator.NE:
             return '$key != ?';
+          case Operator.GT:
+            return '$key > ?';
+          case Operator.LT:
+            return '$key < ?';
+          case Operator.GE:
+            return '$key >= ?';
+          case Operator.LE:
+            return '$key <= ?';
         }
       }).join(' and ');
 
       whereArgs = conditions.values.map((value) {
         switch (value.operator) {
-          case Operator.equal:
-          case Operator.notEqual:
-            return value.keyword;
-          case Operator.like:
+          case Operator.LIKE:
             return '%${value.keyword}%';
+          default:
+            return value.keyword;
         }
       }).toList(growable: false);
     }
@@ -121,37 +153,8 @@ abstract class Repository {
     );
   }
 
-  Future<Map<String, dynamic>?> findFirst({
-    Map<String, dynamic>? conditions,
-    List<String>? orders,
-  }) async {
-    final db = await connection.db;
-
-    // 组装查询条件
-    String? where;
-    List<dynamic>? whereArgs;
-    if (conditions != null && conditions.isNotEmpty) {
-      where = conditions.keys.map((key) => '$key like ?').join(' and ');
-      whereArgs = conditions.values.map((value) => '%$value%').toList(growable: false);
-    }
-
-    // 按字段排序
-    String? orderBy;
-    if (orders != null && orders.isNotEmpty) {
-      orderBy = orders.join(',');
-    }
-
-    // 执行查询
-    final result = await db.query(
-      table,
-      where: where,
-      whereArgs: whereArgs,
-      orderBy: orderBy,
-      limit: 1,
-    );
-
-    if (result.isEmpty) return null;
-    return result[0];
+  Future<Map<String, dynamic>?> findFirst({Map<String, Condition>? conditions, List<String>? orders}) async {
+    return (await findAll(current: 0, size: 1, conditions: conditions, orders: orders))[0];
   }
 
   Future<Map<String, dynamic>?> getById(int id) async {
@@ -205,37 +208,8 @@ class Condition {
 
   Condition(
     this.keyword, [
-    this.operator = Operator.equal,
+    this.operator = Operator.EQ,
   ]);
 }
 
-enum Operator {
-  equal,
-  like,
-  notEqual,
-}
-
-class Connection {
-  Connection._();
-
-  static final _instance = Connection._();
-
-  factory Connection() {
-    return _instance;
-  }
-
-  Future<Database>? _db;
-
-  Future<Database> get db async {
-    if (_db == null) {
-      final path = await getDatabasesPath();
-      _db = openDatabase(
-        "$path/root",
-        version: version,
-        onCreate: onCreate,
-        onUpgrade: onUpgrade,
-      );
-    }
-    return _db!;
-  }
-}
+enum Operator { EQ, NE, GT, LT, GE, LE, LIKE }

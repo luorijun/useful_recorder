@@ -1,4 +1,42 @@
+import 'package:sqflite/sqflite.dart';
+
 import '../utils/repository.dart';
+
+// ==============================
+// region 数据表
+// TODO 有空从 repository 中改过来
+// ==============================
+
+const version = 7;
+
+const drop = '''
+drop table if exists record;
+''';
+
+const create = '''
+create table record (
+  id integer primary key autoincrement,
+  date integer not null,
+  type integer not null,
+  pain integer,
+  flow integer,
+  emotion integer,
+  note text,
+  title text
+);
+''';
+
+final onCreate = (Database db, int version) {
+  db.execute(create);
+  db.setVersion(version);
+};
+
+final onUpgrade = (Database db, int oldVersion, int newVersion) {
+  db.execute(drop);
+  onCreate(db, newVersion);
+};
+
+// endregion
 
 // ==============================
 // region 模型
@@ -42,7 +80,7 @@ class Record {
     this.title,
   });
 
-  Record.fromMap(map) {
+  Record.fromMap(Map<String, dynamic> map) {
     date = DateTime.fromMillisecondsSinceEpoch(map['date']);
     type = map['type'] == -1 ? null : RecordType.values[map['type']];
     pain = map['pain'];
@@ -82,11 +120,40 @@ class Record {
 // endregion
 
 // ==============================
-// region 数据源
+// region 仓库
 // ==============================
 
 class RecordRepository extends Repository {
   RecordRepository() : super(table: "record");
+
+  Future<Record?> findFirstMensesAfterDate(DateTime date) async {
+    final result = await findFirst(
+      conditions: {'date': Condition('${date.millisecondsSinceEpoch}', Operator.GT)},
+      orders: ['date asc'],
+    );
+
+    return _mapToRecord(result);
+  }
+
+  Future<Record?> findLastMensesBeforeDat(DateTime date) async {
+    final result = await findFirst(
+      conditions: {'date': Condition('${date.millisecondsSinceEpoch}', Operator.LT)},
+      orders: ['date desc'],
+    );
+
+    return _mapToRecord(result);
+  }
+
+  Future<Record?> findByDate(DateTime date) async {
+    final result = await findFirst(
+      conditions: {'date': Condition('${date.millisecondsSinceEpoch}')},
+    );
+    return _mapToRecord(result);
+  }
+
+  Record? _mapToRecord(Map<String, dynamic>? map) {
+    return map == null ? null : Record.fromMap(map);
+  }
 }
 
 // endregion

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:useful_recorder/models/record.dart';
 import 'package:useful_recorder/utils/datetime_extension.dart';
 import 'package:useful_recorder/views/records/calendar.dart';
 import 'package:useful_recorder/views/records/inspector.dart';
@@ -87,7 +88,7 @@ class RecordsView extends StatelessWidget {
                         );
                       }),
                       onTap: () {
-                        state.selectedDate = day;
+                        state.selectDate(day);
                       },
                     );
                   });
@@ -107,20 +108,29 @@ class RecordsView extends StatelessWidget {
 class RecordsViewState extends ChangeNotifier {
   RecordsViewState();
 
+  final _repository = RecordRepository();
+
   CalendarMode _mode = CalendarMode.DATE;
-  DateTime _selectedDate = DateTime.now();
-
-  DateTime get selectedDate => _selectedDate;
-
-  set selectedDate(DateTime date) {
-    this._selectedDate = date;
-    notifyListeners();
-  }
+  DateTime selectedDate = DateTime.now();
+  late Record selectedRecord = Record(selectedDate);
+  DateMode selectedDateMode = DateMode.NORMAL;
 
   CalendarMode get mode => _mode;
 
   set mode(CalendarMode mode) {
     _mode = mode;
+    notifyListeners();
+  }
+
+  /// 查询选中的记录是异步操作，而设置选中日期是同步操作，因此
+  /// 需要分开触发重建操作
+  selectDate(DateTime date) async {
+    this.selectedDate = date;
+    notifyListeners();
+
+    // TODO 需要测试一下，在一个上下文中 select 多个值会不会重复 build
+    this.selectedRecord = await _repository.findByDate(date) ?? Record(date);
+    this.selectedDateMode = await calcDateMode(date);
     notifyListeners();
   }
 
@@ -131,7 +141,7 @@ class RecordsViewState extends ChangeNotifier {
   /// _ o {
   /// } o {
   /// { o }
-  DateMode getDateMode(DateTime date) {
+  Future<DateMode> calcDateMode(DateTime date) async {
     // 查询之后最近一次经期
 
     // 如果之后是经期结束，则直接返回经期
