@@ -7,7 +7,7 @@ import '../utils/repository.dart';
 // TODO 有空从 repository 中改过来
 // ==============================
 
-const version = 7;
+const version = 8;
 
 const drop = '''
 drop table if exists record;
@@ -21,6 +21,7 @@ create table record (
   pain integer,
   flow integer,
   emotion integer,
+  weather integer,
   note text,
   title text
 );
@@ -49,23 +50,32 @@ enum RecordType {
 }
 
 enum RecordEmotion {
-  EXCITED,
   HAPPY,
+  EXCITED,
   CALM,
   SAD,
   ANGRY,
-  TIRED,
+}
+
+enum RecordWeather {
+  SUN,
+  CLOUD,
+  WIND,
+  RAIN,
+  SNOW,
 }
 
 class Record {
   int? id;
 
   DateTime? date;
-
   RecordType? type;
+
   int? pain;
   int? flow;
+
   RecordEmotion? emotion;
+  RecordWeather? weather;
 
   String? note;
   String? title;
@@ -76,6 +86,7 @@ class Record {
     this.pain,
     this.flow,
     this.emotion,
+    this.weather,
     this.note,
     this.title,
   });
@@ -86,6 +97,7 @@ class Record {
     pain = map['pain'];
     flow = map['flow'];
     emotion = map['emotion'];
+    weather = map['weather'];
     note = map['note'];
     title = map['title'];
   }
@@ -98,6 +110,7 @@ class Record {
       'pain': pain,
       'flow': flow,
       'emotion': emotion?.index,
+      'weather': weather?.index,
       'note': note,
       'title': title,
     };
@@ -112,6 +125,7 @@ class Record {
         'pain: $pain, '
         'flow: $flow, '
         'emotion: $emotion, '
+        'weather: $weather, '
         'note: $note, '
         'title: $title}';
   }
@@ -128,7 +142,10 @@ class RecordRepository extends Repository {
 
   Future<Record?> findFirstMensesAfterDate(DateTime date) async {
     final result = await findFirst(
-      conditions: {'date': Condition('${date.millisecondsSinceEpoch}', Operator.GT)},
+      conditions: {
+        'date': Condition('${date.millisecondsSinceEpoch}', Operator.GT),
+        'type': Condition([RecordType.MENSES_START.index, RecordType.MENSES_END.index], Operator.IN),
+      },
       orders: ['date asc'],
     );
 
@@ -137,7 +154,10 @@ class RecordRepository extends Repository {
 
   Future<Record?> findLastMensesBeforeDat(DateTime date) async {
     final result = await findFirst(
-      conditions: {'date': Condition('${date.millisecondsSinceEpoch}', Operator.LT)},
+      conditions: {
+        'date': Condition('${date.millisecondsSinceEpoch}', Operator.LT),
+        'type': Condition([RecordType.MENSES_START.index, RecordType.MENSES_END.index], Operator.IN),
+      },
       orders: ['date desc'],
     );
 

@@ -123,17 +123,27 @@ abstract class Repository {
             return '$key >= ?';
           case Operator.LE:
             return '$key <= ?';
+          case Operator.IN:
+            assert(value.keyword is List);
+            final slots = List.filled(value.keyword.length, '?').join(',');
+            return '$key IN ($slots)';
         }
       }).join(' and ');
 
-      whereArgs = conditions.values.map((value) {
-        switch (value.operator) {
-          case Operator.LIKE:
-            return '%${value.keyword}%';
-          default:
-            return value.keyword;
-        }
-      }).toList(growable: false);
+      whereArgs = conditions.values
+          .map((value) {
+            switch (value.operator) {
+              case Operator.LIKE:
+                return '%${value.keyword}%';
+              case Operator.IN:
+                assert(value.keyword is List);
+                return value.keyword;
+              default:
+                return value.keyword;
+            }
+          })
+          .expand((element) => element is List ? element : [element])
+          .toList(growable: false);
     }
 
     // 按字段排序
@@ -154,7 +164,8 @@ abstract class Repository {
   }
 
   Future<Map<String, dynamic>?> findFirst({Map<String, Condition>? conditions, List<String>? orders}) async {
-    return (await findAll(current: 0, size: 1, conditions: conditions, orders: orders))[0];
+    final all = await findAll(current: 0, size: 1, conditions: conditions, orders: orders);
+    return all.isNotEmpty ? all.first : null;
   }
 
   Future<Map<String, dynamic>?> getById(int id) async {
@@ -203,7 +214,7 @@ abstract class Repository {
 }
 
 class Condition {
-  final String keyword;
+  final dynamic keyword;
   final Operator operator;
 
   Condition(
@@ -212,4 +223,4 @@ class Condition {
   ]);
 }
 
-enum Operator { EQ, NE, GT, LT, GE, LE, LIKE }
+enum Operator { EQ, NE, GT, LT, GE, LE, LIKE, IN }
