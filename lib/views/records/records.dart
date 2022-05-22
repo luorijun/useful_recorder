@@ -150,8 +150,10 @@ class RecordsViewState extends ChangeNotifier {
   final _repository = RecordRepository();
 
   CalendarMode _mode = CalendarMode.DATE;
-  DateTime selectedDate = DateTime.now();
+  DateTime selectedDate = DateTime.now().toDate;
   Record? selectedRecord;
+  Record? selectedPrevMenses;
+  Record? selectedNextMenses;
   DateMode selectedDateMode = DateMode.NORMAL;
 
   CalendarMode get mode => _mode;
@@ -167,8 +169,9 @@ class RecordsViewState extends ChangeNotifier {
     this.selectedDate = date;
     notifyListeners();
 
-    // TODO 需要测试一下，在一个上下文中 select 多个值会不会重复 build
     this.selectedRecord = await _repository.findByDate(date);
+    this.selectedPrevMenses = await _repository.findLastMensesBeforeDate(date);
+    this.selectedNextMenses = await _repository.findFirstMensesAfterDate(date);
     this.selectedDateMode = await calcDateMode(date);
     notifyListeners();
   }
@@ -180,17 +183,14 @@ class RecordsViewState extends ChangeNotifier {
   /// } o {
   /// { o }
   Future<DateMode> calcDateMode(DateTime date) async {
-    // 查询之后最近一次经期
-    final next = await _repository.findFirstMensesAfterDate(date);
-
     // 如果之后是经期结束，则直接返回经期
-    if (next?.type == RecordType.MENSES_END) {
+    if (selectedNextMenses?.type == RecordType.MENSES_END) {
       return DateMode.MENSES;
     }
 
     // 如果之后是经期开始。则根据日期推算
-    if (next?.type == RecordType.MENSES_START) {
-      final duration = next!.date!.difference(date).inDays;
+    if (selectedNextMenses?.type == RecordType.MENSES_START) {
+      final duration = selectedNextMenses!.date!.difference(date).inDays;
 
       // 10 - 18 天内为排卵期，14 天为排卵日，其他为普通日期
       if (duration > 10 && duration < 18) {
@@ -202,20 +202,17 @@ class RecordsViewState extends ChangeNotifier {
       return DateMode.NORMAL;
     }
 
-    // 如果之后没有记录（否则），则查询之前最近一次经期
-    final prev = await _repository.findLastMensesBeforeDat(date);
-
-    // 如果之前是经期开始，并且当天不是未来日期，则直接返回经期
-    if (prev?.type == RecordType.MENSES_START && !date.isFuture) {
+    // 否则，如果之前是经期开始，并且当天不是未来日期，则直接返回经期
+    if (selectedPrevMenses?.type == RecordType.MENSES_START && !date.isFuture) {
       return DateMode.MENSES;
     }
 
     // 如果之前是经期结束，或者是经期开始且当天是未来日期（非空记录，即需要预测的日期），则开始预测
-    if (prev != null && prev.type == RecordType.MENSES_END) {
+    if (selectedPrevMenses != null && selectedPrevMenses?.type == RecordType.MENSES_END) {
       // 计算当日在周期中所属的天数
       final sp = await SharedPreferences.getInstance();
       final period = sp.getInt(PERIOD_LENGTH);
-      final duration = (date.difference(prev.date!).inDays % period!) + 1;
+      final duration = (date.difference((selectedPrevMenses?.date)!).inDays % period!) + 1;
 
       // 10 - 18 天内为排卵期，14 天为排卵日，其他为普通日期
       if (duration > 10 && duration < 18) {
