@@ -138,7 +138,11 @@ class Record {
 // ==============================
 
 class RecordRepository extends Repository {
-  RecordRepository() : super(table: "record");
+  RecordRepository._() : super(table: "record");
+
+  static final RecordRepository _instance = RecordRepository._();
+
+  factory RecordRepository() => _instance;
 
   Future<Record?> findFirstMensesAfterDate(DateTime date) async {
     final result = await findFirst(
