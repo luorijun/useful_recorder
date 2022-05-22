@@ -15,7 +15,7 @@ class Calendar extends StatelessWidget {
     this.onSelectDate,
     this.onChangePage,
   }) : super(key: key) {
-    this.initDate = initDate ?? DateTime.now();
+    this.initDate = initDate ?? DateTime.now().toDate;
   }
 
   /// 初始日期
@@ -73,6 +73,7 @@ class Calendar extends StatelessWidget {
                     margin: EdgeInsets.only(right: 8),
                     child: Builder(builder: (context) {
                       final state = context.read<CalendarState>();
+                      final records = context.read<RecordsViewState>();
                       return ElevatedButton(
                         child: Text("今天"),
                         style: ButtonStyle(
@@ -86,10 +87,11 @@ class Calendar extends StatelessWidget {
                           length < 5
                               ? state.monthViewController.animateToPage(
                                   to,
-                                  duration: Duration(milliseconds: length * 500),
+                                  duration: Duration(milliseconds: length * 400),
                                   curve: Curves.fastOutSlowIn,
                                 )
                               : state.monthViewController.jumpToPage(to);
+                          records.selectDate(DateTime.now().toDate);
                         },
                       );
                     }),
