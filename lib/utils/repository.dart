@@ -179,7 +179,7 @@ abstract class Repository {
     return result.isNotEmpty ? result[0] : null;
   }
 
-  Future<void> create(Map<String, dynamic> entity) async {
+  Future<void> add(Map<String, dynamic> entity) async {
     final db = await connection.db;
     db.insert(table, entity);
   }

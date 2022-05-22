@@ -152,7 +152,7 @@ class RecordRepository extends Repository {
     return _mapToRecord(result);
   }
 
-  Future<Record?> findLastMensesBeforeDat(DateTime date) async {
+  Future<Record?> findLastMensesBeforeDate(DateTime date) async {
     final result = await findFirst(
       conditions: {
         'date': Condition('${date.millisecondsSinceEpoch}', Operator.LT),
