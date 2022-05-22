@@ -56,7 +56,7 @@ extension DateTimeExtension on DateTime {
   // region 获取绝对日期
   // ==============================
 
-  DateTime get today => DateTime(year, month, day);
+  DateTime get toDate => DateTime(year, month, day);
 
   DateTime get toMonth => DateTime(year, month, 1);
 
@@ -68,13 +68,13 @@ extension DateTimeExtension on DateTime {
   // region 计算相对日期
   // ==============================
 
-  DateTime prevDay() => this - 1.day;
+  DateTime prevDay() => this - 1.days;
 
-  DateTime nextDay() => this + 1.day;
+  DateTime nextDay() => this + 1.days;
 
-  DateTime prevWeek() => this - 7.day;
+  DateTime prevWeek() => this - 7.days;
 
-  DateTime nextWeek() => this + 7.day;
+  DateTime nextWeek() => this + 7.days;
 
   DateTime prevMonth() => DateTime(
         year,
@@ -126,15 +126,21 @@ extension DateTimeExtension on DateTime {
 
   DateTime operator -(Duration duration) => subtract(duration);
 
-  String format(String divider) {
-    return "$year$divider$month$divider$day";
-  }
-
-  static int diff(DateTime a, DateTime b) {
+  static int dateDistance(DateTime a, DateTime b) {
     return a.difference(b).inDays.abs();
   }
 }
 
 extension IntExtension on int {
-  Duration get day => Duration(days: this);
+  Duration get days => Duration(days: this);
+
+  Duration get hours => Duration(hours: this);
+
+  Duration get minutes => Duration(minutes: this);
+
+  Duration get seconds => Duration(seconds: this);
+
+  Duration get milliseconds => Duration(milliseconds: this);
+
+  Duration get microseconds => Duration(microseconds: this);
 }
