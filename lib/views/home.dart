@@ -1,21 +1,58 @@
+import 'dart:developer';
+
 import 'package:animations/animations.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:useful_recorder/models/record.dart';
 import 'package:useful_recorder/views/analysis/analysis.dart';
 import 'package:useful_recorder/views/records/records.dart';
 import 'package:useful_recorder/views/settings/settings.dart';
+
+class HomePageState extends ChangeNotifier {
+  HomePageState(this.pages) {
+    this._older = 0;
+    this._newer = 0;
+  }
+
+  List<Widget> pages;
+
+  late int _older;
+  late int _newer;
+
+  Widget get page => pages[index];
+
+  int get index => _newer;
+
+  set index(int value) {
+    _older = _newer;
+    _newer = value;
+    notifyListeners();
+  }
+
+  get reverse => _older > _newer;
+
+  // ==============================
+  // region 注册页面状态
+  // ==============================
+
+  final Map<String, ChangeNotifier> states = {};
+
+// endregion
+}
 
 class HomePage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
 
+    final state = HomePageState([
+      RecordsView(),
+      AnalysisView(),
+      SettingsView(),
+    ]);
+
     return ChangeNotifierProvider(
-      create: (context) => HomePageState([
-        RecordsView(),
-        AnalysisView(),
-        SettingsView(),
-      ]),
+      create: (context) => state,
       child: Scaffold(
         body: Builder(builder: (context) {
           final state = context.read<HomePageState>();
@@ -68,31 +105,95 @@ class HomePage extends StatelessWidget {
             ),
           );
         }),
+        floatingActionButton: FloatingActionButton(
+          child: Icon(Icons.bug_report),
+          onPressed: () {
+            showModalBottomSheet(
+              context: context,
+              builder: (context) => BottomSheet(
+                builder: (context) {
+                  return FabSheetColumn(children: [
+                    FabSheetButton(
+                      child: Text("打印数据表"),
+                      onPressed: () async {
+                        final repo = RecordRepository();
+                        final list = await repo.findAll();
+                        log('count: ${list.length}');
+                        final result = list
+                            .map((element) => Record.fromMap(element))
+                            .where((element) => element.type != RecordType.NORMAL)
+                            .toList();
+                        result.sort((a, b) => a.date!.compareTo(b.date!));
+                        result.forEach((element) {
+                          log('$element');
+                        });
+                        Navigator.pop(context);
+                      },
+                    ),
+                    FabSheetButton(
+                      child: Text("打印本页数据"),
+                      onPressed: () {
+                        final recordsState = state.states['recordsView'] as RecordsViewState;
+                        log('${recordsState.monthData}');
+                        Navigator.pop(context);
+                      },
+                    )
+                  ]);
+                },
+                onClosing: () {},
+              ),
+            );
+          },
+        ),
       ),
     );
   }
 }
 
-class HomePageState extends ChangeNotifier {
-  List<Widget> pages;
+// ==============================
+// 样式
+// ==============================
 
-  late int _older;
-  late int _newer;
+class FabSheetColumn extends StatelessWidget {
+  const FabSheetColumn({Key? key, required this.children}) : super(key: key);
 
-  Widget get page => pages[index];
+  final List<Widget> children;
 
-  int get index => _newer;
-
-  set index(int value) {
-    _older = _newer;
-    _newer = value;
-    notifyListeners();
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 0),
+      child: Column(
+        children: children,
+        mainAxisSize: MainAxisSize.min,
+      ),
+    );
   }
+}
 
-  get reverse => _older > _newer;
+class FabSheetButton extends StatelessWidget {
+  const FabSheetButton({
+    Key? key,
+    this.child,
+    this.onPressed,
+  }) : super(key: key);
 
-  HomePageState(this.pages) {
-    this._older = 0;
-    this._newer = 0;
+  final Widget? child;
+  final Function()? onPressed;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 16),
+      child: ElevatedButton(
+        child: child,
+        onPressed: onPressed,
+        style: ElevatedButton.styleFrom(
+          elevation: 0,
+          minimumSize: Size.fromHeight(40),
+          tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+        ),
+      ),
+    );
   }
 }

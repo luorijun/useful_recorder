@@ -1,13 +1,13 @@
 import 'package:sqflite/sqflite.dart';
+import 'package:useful_recorder/utils/datetime_extension.dart';
 
 import '../utils/repository.dart';
 
 // ==============================
 // region 数据表
-// TODO 有空从 repository 中改过来
 // ==============================
 
-const version = 8;
+const version = 24;
 
 const drop = '''
 drop table if exists record;
@@ -92,6 +92,7 @@ class Record {
   });
 
   Record.fromMap(Map<String, dynamic> map) {
+    id = map['id'];
     date = DateTime.fromMillisecondsSinceEpoch(map['date']);
     type = map['type'] == -1 ? null : RecordType.values[map['type']];
     pain = map['pain'];
@@ -138,11 +139,22 @@ class Record {
 // ==============================
 
 class RecordRepository extends Repository {
-  RecordRepository._() : super(table: "record");
+  RecordRepository._() : super(table: "record", version: version, onCreate: onCreate, onUpdate: onUpgrade);
 
   static final RecordRepository _instance = RecordRepository._();
 
   factory RecordRepository() => _instance;
+
+  Future<List<Record>> findAllInMonth(DateTime month) async {
+    final db = await connection.db;
+    final result = await db.query(
+      table,
+      where: ""
+          "date >= ${month.firstDayInMonth.toDate.millisecondsSinceEpoch} and "
+          "date <= ${month.lastDayInMonth.toDate.millisecondsSinceEpoch}",
+    );
+    return result.map((e) => Record.fromMap(e)).toList();
+  }
 
   Future<Record?> findFirstMensesAfterDate(DateTime date) async {
     final result = await findFirst(
@@ -156,10 +168,11 @@ class RecordRepository extends Repository {
     return _mapToRecord(result);
   }
 
+  // 之前的包括当天
   Future<Record?> findLastMensesBeforeDate(DateTime date) async {
     final result = await findFirst(
       conditions: {
-        'date': Condition('${date.millisecondsSinceEpoch}', Operator.LT),
+        'date': Condition('${date.millisecondsSinceEpoch}', Operator.LE),
         'type': Condition([RecordType.MENSES_START.index, RecordType.MENSES_END.index], Operator.IN),
       },
       orders: ['date desc'],

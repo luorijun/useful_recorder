@@ -1,50 +1,23 @@
+import 'dart:developer';
 import 'dart:math' as math;
 
 import 'package:sqflite/sqflite.dart';
 
-// ==============================
-// region 数据库配置
-// ==============================
-
-const version = 7;
-
-const drop = '''
-drop table if exists record;
-''';
-
-const create = '''
-create table record (
-  id integer primary key autoincrement,
-  date integer not null,
-  type integer not null,
-  pain integer,
-  flow integer,
-  emotion integer,
-  note text,
-  title text
-);
-''';
-
-final onCreate = (Database db, int version) {
-  db.execute(create);
-  db.setVersion(version);
-};
-
-final onUpgrade = (Database db, int oldVersion, int newVersion) {
-  db.execute(drop);
-  onCreate(db, newVersion);
-};
-
-// endregion
+import '../models/record.dart';
 
 class Connection {
-  Connection._();
+  Connection._(this.version, this.onCreate, this.onUpdate);
 
-  static final _instance = Connection._();
+  static late final _instance;
 
-  factory Connection() {
+  factory Connection(version, onCreate, onUpdate) {
+    _instance = Connection._(version, onCreate, onUpdate);
     return _instance;
   }
+
+  final int version;
+  final Function(Database, int) onCreate;
+  final Function(Database, int, int) onUpdate;
 
   Future<Database>? _db;
 
@@ -65,10 +38,16 @@ class Connection {
 abstract class Repository {
   Repository({
     required this.table,
+    required this.version,
+    required this.onCreate,
+    required this.onUpdate,
   });
 
   final String table;
-  final Connection connection = Connection();
+  final int version;
+  final Function(Database, int) onCreate;
+  final Function(Database, int, int) onUpdate;
+  late Connection connection = Connection(version, onCreate, onUpdate);
 
   Future<int> count({
     Map<String, dynamic>? conditions,
@@ -180,7 +159,9 @@ abstract class Repository {
   }
 
   Future<void> add(Map<String, dynamic> entity) async {
+    entity.remove('id');
     final db = await connection.db;
+    log('$entity');
     db.insert(table, entity);
   }
 

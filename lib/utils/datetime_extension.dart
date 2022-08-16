@@ -46,9 +46,9 @@ extension DateTimeExtension on DateTime {
   // region 统计日期
   // ==============================
 
-  int get daysOfMonth => toMonth.nextMonth().difference(toMonth).inDays;
+  int get daysInMonth => toMonth.nextMonth.difference(toMonth).inDays;
 
-  int get daysOfYear => toYear.nextYear().difference(toYear).inDays;
+  int get daysInYear => toYear.nextYear.difference(toYear).inDays;
 
   // endregion
 
@@ -68,15 +68,15 @@ extension DateTimeExtension on DateTime {
   // region 计算相对日期
   // ==============================
 
-  DateTime prevDay() => this - 1.days;
+  DateTime get prevDay => this - 1.days;
 
-  DateTime nextDay() => this + 1.days;
+  DateTime get nextDay => this + 1.days;
 
-  DateTime prevWeek() => this - 7.days;
+  DateTime get prevWeek => this - 7.days;
 
-  DateTime nextWeek() => this + 7.days;
+  DateTime get nextWeek => this + 7.days;
 
-  DateTime prevMonth() => DateTime(
+  DateTime get prevMonth => DateTime(
         year,
         month - 1,
         day,
@@ -87,7 +87,7 @@ extension DateTimeExtension on DateTime {
         microsecond,
       );
 
-  DateTime nextMonth() => DateTime(
+  DateTime get nextMonth => DateTime(
         year,
         month + 1,
         day,
@@ -98,7 +98,7 @@ extension DateTimeExtension on DateTime {
         microsecond,
       );
 
-  DateTime prevYear() => DateTime(
+  DateTime get prevYear => DateTime(
         year - 1,
         month,
         day,
@@ -109,10 +109,32 @@ extension DateTimeExtension on DateTime {
         microsecond,
       );
 
-  DateTime nextYear() => DateTime(
+  DateTime get nextYear => DateTime(
         year + 1,
         month,
         day,
+        hour,
+        minute,
+        second,
+        millisecond,
+        microsecond,
+      );
+
+  DateTime get firstDayInMonth => DateTime(
+        year,
+        month,
+        1,
+        hour,
+        minute,
+        second,
+        millisecond,
+        microsecond,
+      );
+
+  DateTime get lastDayInMonth => DateTime(
+        year,
+        month,
+        daysInMonth,
         hour,
         minute,
         second,
