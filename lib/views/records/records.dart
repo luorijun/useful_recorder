@@ -19,8 +19,11 @@ enum CalendarMode {
 
 enum DateMode {
   MENSES,
+  MENSES_FORECAST,
   OVULATION,
+  OVULATION_FORECAST,
   SENSITIVE,
+  SENSITIVE_FORECAST,
   NORMAL,
 }
 
@@ -116,6 +119,7 @@ class RecordsViewState extends ChangeNotifier {
     for (final date in dateList) {
       final prev = await _repository.findLastMensesBeforeDate(date);
       final next = await _repository.findFirstMensesAfterDate(date);
+
       monthData[date] = DateInfo(
         date: date,
         curr: map[date],
@@ -123,6 +127,10 @@ class RecordsViewState extends ChangeNotifier {
         next: next,
         mode: await _calcDateMode(date, prev, next),
       );
+
+      if (date.isBefore(DateTime(2022, 9, 16)) && date.isAfter(DateTime(2022, 9, 5))) {
+        log(monthData[date].toString());
+      }
     }
     notifyListeners();
   }
@@ -154,19 +162,39 @@ class RecordsViewState extends ChangeNotifier {
     }
 
     // 如果之前是经期结束，或者是经期开始且当天是未来日期（非空记录，即需要预测的日期），则开始预测
-    if (prev != null && prev.type == RecordType.MENSES_END) {
+    // 确定未来第一个周期的开始日期：
+    //   - 如果之前是经期结束，则最后一次开始经期的日期为第一天
+    //   - 如果之前是经期开始，则此经期开始为第一天
+    if (prev != null && prev.type != DateMode.NORMAL) {
       // 计算当日在周期中所属的天数
       final sp = await SharedPreferences.getInstance();
+      final menses = sp.getInt(MENSES_LENGTH) ?? DEFAULT_MENSES_LENGTH;
       final period = sp.getInt(PERIOD_LENGTH) ?? DEFAULT_PERIOD_LENGTH;
-      final duration = (date.difference(prev.date!).inDays % period) + 1;
 
-      // 10 - 18 天内为排卵期，14 天为排卵日，其他为普通日期
-      if (duration > 10 && duration < 18) {
-        if (duration == 14) {
-          return DateMode.SENSITIVE;
-        }
-        return DateMode.OVULATION;
+      // 确定预测周期开始计算日期
+      var offsetStart;
+      if (prev.type == RecordType.MENSES_START) {
+        offsetStart = prev;
+      } else {
+        offsetStart = await _repository.findLastMensesStart();
       }
+
+      final offset = (date.difference(offsetStart.date!).inDays % period) + 1;
+
+      // 0 - 5 天内为经期
+      if (offset <= menses) {
+        return DateMode.MENSES_FORECAST;
+      }
+
+      // 10 - 18 天内为排卵期，14 天为排卵日
+      if (offset > 10 && offset < 18) {
+        if (offset == 14) {
+          return DateMode.SENSITIVE_FORECAST;
+        }
+        return DateMode.OVULATION_FORECAST;
+      }
+
+      // 其他为普通日期
       return DateMode.NORMAL;
     }
 

@@ -216,6 +216,8 @@ class DateView extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+
     if (!date.sameMonth(month)) {
       return Container();
     }
@@ -245,20 +247,42 @@ class DateView extends StatelessWidget {
         }
       }
 
-      // 根据选中日期的记录类型改变颜色
+      // 根据选中日期的记录类型改变显示样式
       var color = Colors.transparent;
       switch (mode) {
         case DateMode.MENSES:
+        case DateMode.MENSES_FORECAST:
           color = Colors.red.shade200;
           break;
         case DateMode.OVULATION:
-          color = Colors.purple.shade200;
+        case DateMode.OVULATION_FORECAST:
+          color = Colors.indigo.shade200;
           break;
         case DateMode.SENSITIVE:
-          color = Colors.purple.shade300;
+        case DateMode.SENSITIVE_FORECAST:
+          color = Colors.purple.shade200;
           break;
         default:
           break;
+      }
+
+      final BoxDecoration decoration;
+      if ([DateMode.MENSES, DateMode.SENSITIVE, DateMode.OVULATION].contains(mode)) {
+        decoration = BoxDecoration(
+          color: color,
+          border: selected.date.sameDay(date) ? Border.all() : null,
+          borderRadius: BorderRadius.circular(6),
+        );
+      } else if ([DateMode.MENSES_FORECAST, DateMode.SENSITIVE_FORECAST, DateMode.OVULATION_FORECAST].contains(mode)) {
+        decoration = BoxDecoration(
+          border: Border.all(color: selected.date.sameDay(date) ? Colors.black87 : color),
+          borderRadius: BorderRadius.circular(6),
+        );
+      } else {
+        decoration = BoxDecoration(
+          border: selected.date.sameDay(date) ? Border.all() : null,
+          borderRadius: BorderRadius.circular(6),
+        );
       }
 
       // 如果是未来日期则淡化文字颜色
@@ -270,6 +294,7 @@ class DateView extends StatelessWidget {
           duration: Duration(milliseconds: 60),
           margin: EdgeInsets.all(4),
           alignment: Alignment.center,
+          decoration: decoration,
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
@@ -308,11 +333,6 @@ class DateView extends StatelessWidget {
               //   ],
               // ),
             ],
-          ),
-          decoration: BoxDecoration(
-            color: color,
-            border: selected.date.sameDay(date) ? Border.all() : null,
-            borderRadius: BorderRadius.circular(6),
           ),
         ),
         onTap: () {

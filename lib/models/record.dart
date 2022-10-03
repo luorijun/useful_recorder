@@ -181,6 +181,14 @@ class RecordRepository extends Repository {
     return _mapToRecord(result);
   }
 
+  Future<Record?> findLastMensesStart() async {
+    final result = await findFirst(
+      conditions: {'type': Condition(RecordType.MENSES_START.index, Operator.EQ)},
+      orders: ['date desc'],
+    );
+    return _mapToRecord(result);
+  }
+
   Future<Record?> findByDate(DateTime date) async {
     final result = await findFirst(
       conditions: {'date': Condition('${date.millisecondsSinceEpoch}')},

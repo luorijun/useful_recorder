@@ -118,7 +118,6 @@ class HomePage extends StatelessWidget {
                       onPressed: () async {
                         final repo = RecordRepository();
                         final list = await repo.findAll();
-                        log('count: ${list.length}');
                         final result = list
                             .map((element) => Record.fromMap(element))
                             .where((element) => element.type != RecordType.NORMAL)
@@ -134,7 +133,9 @@ class HomePage extends StatelessWidget {
                       child: Text("打印本页数据"),
                       onPressed: () {
                         final recordsState = state.states['recordsView'] as RecordsViewState;
-                        log('${recordsState.monthData}');
+                        recordsState.monthData.forEach((key, value) {
+                          log('日期：$key，状态：${value.mode}');
+                        });
                         Navigator.pop(context);
                       },
                     )
