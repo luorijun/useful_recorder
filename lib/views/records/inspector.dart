@@ -42,13 +42,8 @@ class Inspector extends StatelessWidget {
                 Divider(),
                 PainManager(),
                 FlowManager(),
-              ]),
-              RecordCard([
                 EmotionManager(),
                 WeatherManager(),
-                Divider(),
-                TitleManager(),
-                ContentManager(),
               ]),
             ],
           ),
