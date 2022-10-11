@@ -58,7 +58,7 @@ final styles = Style(
   color: StyleColor(
     surfaceBackgroundText: Color(0xff333333),
     surfaceBackgroundTextWeak: Color(0xff999999),
-    primaryBackgroundText: Color(0xff333333),
+    primaryBackgroundText: Colors.white,
     primaryBackgroundTextWeak: Color(0xff999999),
     secondaryBackgroundText: Color(0xff333333),
     secondaryBackgroundTextWeak: Color(0xff999999),

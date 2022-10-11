@@ -445,7 +445,6 @@ class RecordsView extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final top = MediaQuery.of(context).padding.top;
 
     // 注册页面状态
     final state = RecordsViewState();
@@ -455,19 +454,7 @@ class RecordsView extends StatelessWidget {
       create: (_) => state,
       child: Column(children: [
         // 标题栏
-        Container(
-          height: top + 56,
-          color: theme.primaryColor,
-          child: Row(children: [
-            // todo 左半部分 - 当前年月
-            // Builder(builder: (context) {
-            //   final month = context.select<RecordsViewState, DateTime>((state) => state.month);
-            //   return Text("${month.year} 年 ${month.month} 月");
-            // }),
-
-            // todo 右半部分 - 视图切换
-          ]),
-        ),
+        RecordsAppBar(title: "记录"),
 
         // 页面正文
         Expanded(
@@ -496,6 +483,51 @@ class RecordsView extends StatelessWidget {
           ]),
         ),
       ]),
+    );
+  }
+}
+
+// ==============================
+// 样式组件
+// ==============================
+
+class RecordsAppBar extends StatelessWidget {
+  const RecordsAppBar({
+    Key? key,
+    required this.title,
+  }) : super(key: key);
+
+  final String title;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final top = MediaQuery.of(context).padding.top;
+
+    return Container(
+      height: top + 56,
+      color: theme.primaryColor,
+      padding: EdgeInsets.only(left: 16),
+      child: Column(
+        children: [
+          SizedBox(height: top),
+          Expanded(
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.center,
+              // todo 左半部分 - 当前年月
+              // todo 右半部分 - 视图切换
+              children: [
+                Text(
+                  title,
+                  style: styles.text.title.copyWith(
+                    color: styles.color.primaryBackgroundText,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
     );
   }
 }
