@@ -1,6 +1,7 @@
 import 'dart:developer';
 
 import 'package:animations/animations.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:useful_recorder/models/record.dart';
@@ -47,7 +48,7 @@ class HomePage extends StatelessWidget {
 
     final state = HomePageState([
       RecordsView(),
-      AnalysisView(),
+      if (kDebugMode) AnalysisView(),
       SettingsView(),
     ]);
 
@@ -85,10 +86,11 @@ class HomePage extends StatelessWidget {
                   icon: Icon(Icons.calendar_today),
                   label: "记录",
                 ),
-                BottomNavigationBarItem(
-                  icon: Icon(Icons.analytics),
-                  label: "统计",
-                ),
+                if (kDebugMode)
+                  BottomNavigationBarItem(
+                    icon: Icon(Icons.analytics),
+                    label: "统计",
+                  ),
                 BottomNavigationBarItem(
                   icon: Icon(Icons.settings),
                   label: "设置",
