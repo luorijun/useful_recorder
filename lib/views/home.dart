@@ -118,10 +118,7 @@ class HomePage extends StatelessWidget {
                       onPressed: () async {
                         final repo = RecordRepository();
                         final list = await repo.findAll();
-                        final result = list
-                            .map((element) => Record.fromMap(element))
-                            .where((element) => element.type != RecordType.NORMAL)
-                            .toList();
+                        final result = list.map((element) => Record.fromMap(element)).toList();
                         result.sort((a, b) => a.date!.compareTo(b.date!));
                         result.forEach((element) {
                           log('$element');

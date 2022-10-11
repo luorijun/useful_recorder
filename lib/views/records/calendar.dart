@@ -295,43 +295,49 @@ class DateView extends StatelessWidget {
           margin: EdgeInsets.all(4),
           alignment: Alignment.center,
           decoration: decoration,
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
+          child: Stack(
+            alignment: Alignment.center,
             children: [
               Text("${date.day}", style: style),
-              // todo 添加提示点
-              // Row(
-              //   mainAxisAlignment: MainAxisAlignment.center,
-              //   children: [
-              //     Container(
-              //       width: 4,
-              //       height: 4,
-              //       margin: EdgeInsets.all(2),
-              //       decoration: BoxDecoration(
-              //         color: Colors.red,
-              //         shape: BoxShape.circle,
-              //       ),
-              //     ),
-              //     Container(
-              //       width: 4,
-              //       height: 4,
-              //       margin: EdgeInsets.all(2),
-              //       decoration: BoxDecoration(
-              //         color: Colors.green,
-              //         shape: BoxShape.circle,
-              //       ),
-              //     ),
-              //     Container(
-              //       width: 4,
-              //       height: 4,
-              //       margin: EdgeInsets.all(2),
-              //       decoration: BoxDecoration(
-              //         color: Colors.blue,
-              //         shape: BoxShape.circle,
-              //       ),
-              //     ),
-              //   ],
-              // ),
+              Container(
+                padding: EdgeInsets.only(bottom: 4),
+                alignment: Alignment.bottomCenter,
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    if (mensesDot)
+                      Container(
+                        width: 4,
+                        height: 4,
+                        margin: EdgeInsets.all(2),
+                        decoration: BoxDecoration(
+                          color: Colors.red,
+                          shape: BoxShape.circle,
+                        ),
+                      ),
+                    if (statusDot)
+                      Container(
+                        width: 4,
+                        height: 4,
+                        margin: EdgeInsets.all(2),
+                        decoration: BoxDecoration(
+                          color: Colors.green,
+                          shape: BoxShape.circle,
+                        ),
+                      ),
+                    if (noteDot)
+                      Container(
+                        width: 4,
+                        height: 4,
+                        margin: EdgeInsets.all(2),
+                        decoration: BoxDecoration(
+                          color: Colors.blue,
+                          shape: BoxShape.circle,
+                        ),
+                      ),
+                  ],
+                ),
+              ),
             ],
           ),
         ),

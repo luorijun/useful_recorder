@@ -5,6 +5,7 @@ import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:useful_recorder/constants.dart';
 import 'package:useful_recorder/models/record.dart';
+import 'package:useful_recorder/styles.dart';
 import 'package:useful_recorder/utils/datetime_extension.dart';
 import 'package:useful_recorder/utils/nullable.dart';
 import 'package:useful_recorder/views/home.dart';
@@ -127,10 +128,6 @@ class RecordsViewState extends ChangeNotifier {
         next: next,
         mode: await _calcDateMode(date, prev, next),
       );
-
-      if (date.isBefore(DateTime(2022, 9, 16)) && date.isAfter(DateTime(2022, 9, 5))) {
-        log(monthData[date].toString());
-      }
     }
     notifyListeners();
   }
@@ -220,7 +217,7 @@ class RecordsViewState extends ChangeNotifier {
   // endregion
 
   // ==============================
-  // region 修改记录
+  // region 修改记录时间
   // ==============================
 
   /// 开始记录
@@ -401,6 +398,44 @@ class RecordsViewState extends ChangeNotifier {
     selectDate(except(this.selected).date);
   }
 
+  // endregion
+
+  // ==============================
+  // region 修改记录数据
+  // ==============================
+
+  // 更新痛感数据
+  void updatePain(DateTime date, int level) async {
+    final record = monthData[date]?.curr ?? Record(date);
+    record.pain = level;
+    await _repository.updateById(record.toMap());
+    selectDate(date);
+  }
+
+  // 更新流量数据
+  void updateFlow(DateTime date, int level) async {
+    final record = monthData[date]?.curr ?? Record(date);
+    record.flow = level;
+    await _repository.updateById(record.toMap());
+    notifyListeners();
+  }
+
+  // 更新心情数据
+  void updateEmotion(DateTime date, RecordEmotion emotion) async {
+    final record = monthData[date]?.curr ?? Record(date);
+    record.emotion = emotion;
+    await _repository.updateById(record.toMap());
+    notifyListeners();
+  }
+
+  // 更新天气数据
+  void updateWeather(DateTime date, RecordWeather weather) async {
+    final record = monthData[date]?.curr ?? Record(date);
+    record.weather = weather;
+    await _repository.updateById(record.toMap());
+    notifyListeners();
+  }
+
 // endregion
 }
 
@@ -442,7 +477,22 @@ class RecordsView extends StatelessWidget {
               child: Calendar(),
             ),
             // 数据检视
-            Flexible(child: Inspector()),
+            Flexible(child: Builder(builder: (context) {
+              final selected = context.select<RecordsViewState, DateInfo>((state) => state.selected);
+
+              if (selected.date.isFuture) {
+                return Center(
+                  child: Text(
+                    "未来的日期不能编辑",
+                    style: styles.text.normal.copyWith(
+                      color: styles.color.surfaceBackgroundTextWeak,
+                    ),
+                  ),
+                );
+              } else {
+                return Inspector();
+              }
+            })),
           ]),
         ),
       ]),

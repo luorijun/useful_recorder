@@ -53,8 +53,8 @@ enum RecordEmotion {
   HAPPY,
   EXCITED,
   CALM,
-  SAD,
   ANGRY,
+  SAD,
 }
 
 enum RecordWeather {
@@ -97,8 +97,8 @@ class Record {
     type = map['type'] == -1 ? null : RecordType.values[map['type']];
     pain = map['pain'];
     flow = map['flow'];
-    emotion = map['emotion'];
-    weather = map['weather'];
+    emotion = map['emotion'] != null ? RecordEmotion.values[map['emotion']] : null;
+    weather = map['weather'] != null ? RecordWeather.values[map['weather']] : null;
     note = map['note'];
     title = map['title'];
   }

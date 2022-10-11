@@ -1,3 +1,5 @@
+import 'dart:developer';
+
 import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:provider/provider.dart';
@@ -24,6 +26,8 @@ class Inspector extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final calendarMode = context.select<RecordsViewState, CalendarMode>((state) => state.calendarMode);
+    final selected = context.select<RecordsViewState, DateInfo>((state) => state.selected);
+
     if (calendarMode != CalendarMode.MONTH) {
       return Container();
     }
@@ -40,8 +44,10 @@ class Inspector extends StatelessWidget {
               RecordCard([
                 MensesManager(),
                 Divider(),
-                PainManager(),
-                FlowManager(),
+                if (selected.mode == DateMode.MENSES) ...[
+                  PainManager(),
+                  FlowManager(),
+                ],
                 EmotionManager(),
                 WeatherManager(),
               ]),
@@ -209,10 +215,18 @@ class PainManager extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final recordState = context.watch<RecordsViewState>();
+    final selected = recordState.selected;
+
     return RatingListTile(
       title: Text("痛感"),
       icon: FontAwesomeIcons.boltLightning,
       max: 5,
+      score: selected.curr?.pain ?? 0,
+      color: Colors.orange.shade300,
+      onRating: (score) {
+        recordState.updatePain(selected.date, score);
+      },
     );
   }
 }
@@ -222,10 +236,18 @@ class FlowManager extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final recordState = context.watch<RecordsViewState>();
+    final selected = recordState.selected;
+
     return RatingListTile(
       title: Text("流量"),
       icon: FontAwesomeIcons.droplet,
       max: 5,
+      score: selected.curr?.flow ?? 0,
+      color: Colors.red.shade300,
+      onRating: (score) {
+        recordState.updateFlow(selected.date, score);
+      },
     );
   }
 }
@@ -235,6 +257,10 @@ class EmotionManager extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final recordState = context.watch<RecordsViewState>();
+    final selected = recordState.selected;
+    final hasEmotion = selected.curr?.emotion != null;
+
     return VoteListTile(
       title: Text("心情"),
       icons: [
@@ -244,6 +270,10 @@ class EmotionManager extends StatelessWidget {
         FontAwesomeIcons.faceAngry,
         FontAwesomeIcons.faceSadCry,
       ],
+      selected: hasEmotion ? selected.curr!.emotion!.index + 1 : 0,
+      onVote: (index) {
+        recordState.updateEmotion(selected.date, RecordEmotion.values[index - 1]);
+      },
     );
   }
 }
@@ -253,6 +283,10 @@ class WeatherManager extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final recordState = context.watch<RecordsViewState>();
+    final selected = recordState.selected;
+    final hasWeather = selected.curr?.weather != null;
+
     return VoteListTile(
       title: Text("天气"),
       icons: [
@@ -262,6 +296,10 @@ class WeatherManager extends StatelessWidget {
         FontAwesomeIcons.cloudRain,
         FontAwesomeIcons.snowflake,
       ],
+      selected: hasWeather ? selected.curr!.weather!.index + 1 : 0,
+      onVote: (index) {
+        recordState.updateWeather(selected.date, RecordWeather.values[index - 1]);
+      },
     );
   }
 }
