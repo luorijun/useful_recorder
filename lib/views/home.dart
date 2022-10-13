@@ -107,44 +107,46 @@ class HomePage extends StatelessWidget {
             ),
           );
         }),
-        floatingActionButton: FloatingActionButton(
-          child: Icon(Icons.bug_report),
-          onPressed: () {
-            showModalBottomSheet(
-              context: context,
-              builder: (context) => BottomSheet(
-                builder: (context) {
-                  return FabSheetColumn(children: [
-                    FabSheetButton(
-                      child: Text("打印数据表"),
-                      onPressed: () async {
-                        final repo = RecordRepository();
-                        final list = await repo.findAll();
-                        final result = list.map((element) => Record.fromMap(element)).toList();
-                        result.sort((a, b) => a.date!.compareTo(b.date!));
-                        result.forEach((element) {
-                          log('$element');
-                        });
-                        Navigator.pop(context);
+        floatingActionButton: kDebugMode
+            ? FloatingActionButton(
+                child: Icon(Icons.bug_report),
+                onPressed: () {
+                  showModalBottomSheet(
+                    context: context,
+                    builder: (context) => BottomSheet(
+                      builder: (context) {
+                        return FabSheetColumn(children: [
+                          FabSheetButton(
+                            child: Text("打印数据表"),
+                            onPressed: () async {
+                              final repo = RecordRepository();
+                              final list = await repo.findAll();
+                              final result = list.map((element) => Record.fromMap(element)).toList();
+                              result.sort((a, b) => a.date!.compareTo(b.date!));
+                              result.forEach((element) {
+                                log('$element');
+                              });
+                              Navigator.pop(context);
+                            },
+                          ),
+                          FabSheetButton(
+                            child: Text("打印本页数据"),
+                            onPressed: () {
+                              final recordsState = state.states['recordsView'] as RecordsViewState;
+                              recordsState.monthData.forEach((key, value) {
+                                log('日期：$key，状态：${value.mode}');
+                              });
+                              Navigator.pop(context);
+                            },
+                          )
+                        ]);
                       },
+                      onClosing: () {},
                     ),
-                    FabSheetButton(
-                      child: Text("打印本页数据"),
-                      onPressed: () {
-                        final recordsState = state.states['recordsView'] as RecordsViewState;
-                        recordsState.monthData.forEach((key, value) {
-                          log('日期：$key，状态：${value.mode}');
-                        });
-                        Navigator.pop(context);
-                      },
-                    )
-                  ]);
+                  );
                 },
-                onClosing: () {},
-              ),
-            );
-          },
-        ),
+              )
+            : null,
       ),
     );
   }
